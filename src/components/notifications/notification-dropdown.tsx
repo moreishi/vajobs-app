@@ -124,6 +124,11 @@ export function NotificationDropdown({ initialCount }: { initialCount: number })
               ))
             )}
           </div>
+          <div className="border-t px-4 py-2">
+            <Link href="/dashboard/notifications" className="text-xs text-primary hover:underline" onClick={() => setOpen(false)}>
+              View all notifications
+            </Link>
+          </div>
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
     interview: { update: vi.fn(), upsert: vi.fn() },
     connectTransaction: { create: vi.fn() },
     notification: { create: vi.fn(), count: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+    engagement: { upsert: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -248,6 +249,32 @@ describe('updateApplicationStatus', () => {
     expect(prisma.application.update).toHaveBeenCalledWith({
       where: { id: 'app-id' },
       data: { status: 'reviewed' },
+    })
+    expect(result).toEqual({ success: true })
+  })
+
+  it('creates engagement when status is accepted', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id' } } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
+      ...mockApplication,
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
+    })
+    vi.mocked(prisma.application.update).mockResolvedValueOnce(mockApplication)
+    vi.mocked(prisma.engagement.upsert).mockResolvedValueOnce({} as any)
+
+    const formData = new FormData()
+    formData.set('status', 'accepted')
+    const result = await updateApplicationStatus('app-id', formData)
+
+    expect(prisma.engagement.upsert).toHaveBeenCalledWith({
+      where: { applicationId: 'app-id' },
+      create: {
+        applicationId: 'app-id',
+        talentId: 'talent-id',
+        clientId: 'client-id',
+        jobPostId: 'job-id',
+      },
+      update: {},
     })
     expect(result).toEqual({ success: true })
   })

@@ -27,6 +27,15 @@ export async function signInWithEmail(formData: FormData) {
     return { error: 'Invalid email or password' }
   }
 
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { emailVerified: true },
+  })
+
+  if (user && !user.emailVerified) {
+    return { error: 'Please verify your email before signing in. Check your inbox for the verification link.' }
+  }
+
   revalidatePath('/', 'layout')
   redirect('/dashboard')
 }
@@ -64,17 +73,46 @@ export async function signUp(formData: FormData) {
   })
 
   if (process.env.RESEND_API_KEY) {
+    const token = crypto.randomUUID()
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+    await prisma.verificationToken.create({
+      data: { identifier: email, token, expires },
+    })
+
+    const verifyUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/verify-email?token=${token}`
     sendEmail({
       to: email,
-      subject: 'Welcome to Talent Hub',
+      subject: 'Verify your email - Talent Hub',
       html: buildEmailHtml(
-        'Your account has been created successfully. Start browsing jobs and connecting with top clients.',
-        { text: 'Browse Jobs', url: `${process.env.AUTH_URL || 'http://localhost:3000'}/jobs` }
+        'Thanks for signing up! Click the button below to verify your email address and activate your account.',
+        { text: 'Verify Email', url: verifyUrl }
       ),
     })
   }
 
   redirect('/login?checkEmail=true')
+}
+
+export async function verifyEmail(token: string) {
+  if (!token) return { error: 'Verification token is required' }
+
+  const stored = await prisma.verificationToken.findUnique({ where: { token } })
+  if (!stored) return { error: 'Invalid verification link' }
+  if (stored.expires < new Date()) {
+    await prisma.verificationToken.delete({ where: { token } })
+    return { error: 'Verification link has expired. Please sign up again.' }
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { email: stored.identifier },
+      data: { emailVerified: new Date() },
+    }),
+    prisma.verificationToken.delete({ where: { token } }),
+  ])
+
+  return { success: true }
 }
 
 export async function signOut() {

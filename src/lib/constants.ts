@@ -25,6 +25,7 @@ export const ROUTES = {
   CLIENT_PROFILE: '/dashboard/client-profile',
   CLIENT_PROFILE_DETAIL: (id: string) => `/clients/${id}` as const,
   SETTINGS: '/dashboard/settings',
+  NOTIFICATIONS: '/dashboard/notifications',
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   RESET_PASSWORD_LINK: (token: string) => `/reset-password?token=${token}` as const,

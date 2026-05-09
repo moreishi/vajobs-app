@@ -12,7 +12,18 @@ vi.mock('@/lib/prisma', () => ({
     jobPost: {
       createMany: vi.fn(),
     },
+    verificationToken: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
+}))
+
+vi.mock('@/lib/email', () => ({
+  sendEmail: vi.fn(),
+  buildEmailHtml: vi.fn(() => '<html></html>'),
 }))
 
 vi.mock('@/lib/auth', () => ({
@@ -34,6 +45,7 @@ const { prisma } = await import('@/lib/prisma')
 let signUp: typeof import('@/actions/auth').signUp
 let seedAdmin: typeof import('@/actions/auth').seedAdmin
 let signInWithEmail: typeof import('@/actions/auth').signInWithEmail
+let verifyEmail: typeof import('@/actions/auth').verifyEmail
 
 beforeEach(async () => {
   vi.clearAllMocks()
@@ -41,6 +53,7 @@ beforeEach(async () => {
   signUp = mod.signUp
   seedAdmin = mod.seedAdmin
   signInWithEmail = mod.signInWithEmail
+  verifyEmail = mod.verifyEmail
 })
 
 describe('signUp', () => {
@@ -146,6 +159,43 @@ describe('signUp', () => {
 
     expect(redirect).toHaveBeenCalledWith('/login?checkEmail=true')
   })
+
+  it('creates verification token and sends email when RESEND_API_KEY is set', async () => {
+    vi.stubEnv('RESEND_API_KEY', 're_abc123')
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.create).mockResolvedValueOnce({
+      id: 'new-id',
+      email: 'test@example.com',
+      password: 'hashed-password',
+      role: 'talent',
+      name: null,
+      emailVerified: null,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    vi.mocked(prisma.verificationToken.create).mockResolvedValueOnce({} as any)
+
+    const { sendEmail } = await import('@/lib/email')
+    const { redirect } = await import('next/navigation')
+
+    const formData = new FormData()
+    formData.set('email', 'test@example.com')
+    formData.set('password', 'password123')
+    formData.set('role', 'talent')
+
+    await signUp(formData)
+
+    expect(prisma.verificationToken.create).toHaveBeenCalledOnce()
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'test@example.com',
+        subject: expect.stringContaining('Verify'),
+      })
+    )
+    expect(redirect).toHaveBeenCalledWith('/login?checkEmail=true')
+    vi.unstubAllEnvs()
+  })
 })
 
 describe('seedAdmin', () => {
@@ -245,5 +295,78 @@ describe('signInWithEmail', () => {
       redirect: false,
     })
     expect(redirect).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('returns error when email not verified', async () => {
+    const { signIn } = await import('@/lib/auth')
+    vi.mocked(signIn).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      emailVerified: null,
+    })
+
+    const formData = new FormData()
+    formData.set('email', 'unverified@example.com')
+    formData.set('password', 'password123')
+
+    const result = await signInWithEmail(formData)
+    expect(result).toEqual({
+      error: 'Please verify your email before signing in. Check your inbox for the verification link.',
+    })
+  })
+})
+
+describe('verifyEmail', () => {
+  it('returns error when token is empty', async () => {
+    const result = await verifyEmail('')
+    expect(result).toEqual({ error: 'Verification token is required' })
+  })
+
+  it('returns error when token not found', async () => {
+    vi.mocked(prisma.verificationToken.findUnique).mockResolvedValueOnce(null)
+    const result = await verifyEmail('invalid-token')
+    expect(result).toEqual({ error: 'Invalid verification link' })
+  })
+
+  it('returns error when token expired', async () => {
+    const expiredDate = new Date()
+    expiredDate.setHours(expiredDate.getHours() - 2)
+    vi.mocked(prisma.verificationToken.findUnique).mockResolvedValueOnce({
+      identifier: 'user@example.com',
+      token: 'expired-token',
+      expires: expiredDate,
+    })
+    vi.mocked(prisma.verificationToken.delete).mockResolvedValueOnce({} as any)
+
+    const result = await verifyEmail('expired-token')
+    expect(result).toEqual({
+      error: 'Verification link has expired. Please sign up again.',
+    })
+    expect(prisma.verificationToken.delete).toHaveBeenCalledWith({
+      where: { token: 'expired-token' },
+    })
+  })
+
+  it('verifies email successfully', async () => {
+    const futureDate = new Date()
+    futureDate.setHours(futureDate.getHours() + 2)
+    vi.mocked(prisma.verificationToken.findUnique).mockResolvedValueOnce({
+      identifier: 'user@example.com',
+      token: 'valid-token',
+      expires: futureDate,
+    })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}])
+
+    const result = await verifyEmail('valid-token')
+
+    expect(prisma.$transaction).toHaveBeenCalledWith([
+      prisma.user.update({
+        where: { email: 'user@example.com' },
+        data: { emailVerified: expect.any(Date) },
+      }),
+      prisma.verificationToken.delete({
+        where: { token: 'valid-token' },
+      }),
+    ])
+    expect(result).toEqual({ success: true })
   })
 })
