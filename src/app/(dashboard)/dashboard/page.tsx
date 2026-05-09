@@ -301,7 +301,14 @@ export default async function DashboardPage() {
       {/* Hired Talents */}
       {hired.length > 0 && (
         <Card>
-          <CardHeader><CardTitle>Hired Talents</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Hired Talents</CardTitle>
+              <Link href="/dashboard/engagements" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                View All
+              </Link>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="divide-y">
               {hired.map((app) => (

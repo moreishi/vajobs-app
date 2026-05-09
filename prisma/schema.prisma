@@ -29,6 +29,8 @@ model User {
   connectTransactions ConnectTransaction[]
   reviewsGiven        Review[]               @relation("Reviewer")
   reviewsReceived     Review[]               @relation("Reviewee")
+  talentEngagements   Engagement[]           @relation("TalentEngagements")
+  clientEngagements   Engagement[]           @relation("ClientEngagements")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -82,6 +84,7 @@ model JobPost {
   poster           User     @relation(fields: [posterId], references: [id], onDelete: Cascade)
   applications     Application[]
   savedBy          SavedJob[]
+  engagements      Engagement[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
@@ -101,6 +104,7 @@ model Application {
   conversation Conversation?
   interview    Interview?
   review       Review?
+  engagement   Engagement?
 
   @@unique([jobPostId, applicantId])
   @@index([applicantId])
@@ -230,4 +234,27 @@ model Review {
   reviewee    User        @relation("Reviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
 
   @@index([revieweeId])
+}
+
+model Engagement {
+  id            String    @id @default(cuid())
+  applicationId String    @unique
+  talentId      String
+  clientId      String
+  jobPostId     String
+  status        String    @default("active")
+  startDate     DateTime  @default(now())
+  rate          Float?
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  talent      User        @relation("TalentEngagements", fields: [talentId], references: [id], onDelete: Cascade)
+  client      User        @relation("ClientEngagements", fields: [clientId], references: [id], onDelete: Cascade)
+  jobPost     JobPost     @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  @@index([talentId])
+  @@index([clientId])
+  @@index([jobPostId])
 }

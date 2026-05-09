@@ -6,6 +6,7 @@ import { hash } from 'bcryptjs'
 import { auth, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { sendEmail, buildEmailHtml } from '@/lib/email'
 import type { Role } from '@/types'
 
 export async function signInWithEmail(formData: FormData) {
@@ -61,6 +62,17 @@ export async function signUp(formData: FormData) {
   await prisma.user.create({
     data: { email, password: hashedPassword, role, connects: 50 },
   })
+
+  if (process.env.RESEND_API_KEY) {
+    sendEmail({
+      to: email,
+      subject: 'Welcome to Talent Hub',
+      html: buildEmailHtml(
+        'Your account has been created successfully. Start browsing jobs and connecting with top clients.',
+        { text: 'Browse Jobs', url: `${process.env.AUTH_URL || 'http://localhost:3000'}/jobs` }
+      ),
+    })
+  }
 
   redirect('/login?checkEmail=true')
 }

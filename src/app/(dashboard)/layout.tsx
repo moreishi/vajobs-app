@@ -16,6 +16,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/dashboard/messages" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
               Messages
             </Link>
+            <Link href="/dashboard/engagements" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+              Engagements
+            </Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
               Jobs
             </Link>

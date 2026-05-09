@@ -131,6 +131,26 @@ export type Review = {
   }
 }
 
+export type EngagementStatus = 'active' | 'ended'
+
+export type Engagement = {
+  id: string
+  applicationId: string
+  talentId: string
+  clientId: string
+  jobPostId: string
+  status: EngagementStatus
+  startDate: string
+  rate: number | null
+  endDate: string | null
+  createdAt: string
+  updatedAt: string
+  talent?: { id: string; name: string | null; email: string }
+  client?: { id: string; name: string | null; email: string }
+  jobPost?: { id: string; title: string }
+  application?: { id: string; coverLetter: string | null }
+}
+
 export type ClientProfile = {
   id: string
   userId: string

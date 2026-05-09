@@ -143,6 +143,19 @@ export async function updateApplicationStatus(applicationId: string, formData: F
     data: { status },
   })
 
+  if (status === 'accepted') {
+    await prisma.engagement.upsert({
+      where: { applicationId },
+      create: {
+        applicationId,
+        talentId: application.applicantId,
+        clientId: application.jobPost.posterId,
+        jobPostId: application.jobPostId,
+      },
+      update: {},
+    })
+  }
+
   await createNotification({
     userId: application.applicantId,
     type: 'status_updated',

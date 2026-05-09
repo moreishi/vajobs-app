@@ -15,6 +15,7 @@ export const ROUTES = {
   NEW_JOB: '/dashboard/jobs/new',
   EDIT_JOB: (id: string) => `/dashboard/jobs/${id}/edit` as const,
   ENGAGEMENTS: '/dashboard/engagements',
+  ENGAGEMENT_DETAIL: (id: string) => `/dashboard/engagements/${id}` as const,
   SAVED_JOBS: '/dashboard/saved-jobs',
   DASHBOARD_APPLICATIONS: '/dashboard/applications',
   DASHBOARD_APPLICATION_DETAIL: (id: string) => `/dashboard/applications/${id}` as const,
@@ -24,4 +25,7 @@ export const ROUTES = {
   CLIENT_PROFILE: '/dashboard/client-profile',
   CLIENT_PROFILE_DETAIL: (id: string) => `/clients/${id}` as const,
   SETTINGS: '/dashboard/settings',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
+  RESET_PASSWORD_LINK: (token: string) => `/reset-password?token=${token}` as const,
 } as const
