@@ -3,13 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "prisma generate --schema=prisma/schema.dev.prisma && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate --schema=prisma/schema.dev.prisma",
+    "db:migrate": "prisma migrate dev --schema=prisma/schema.dev.prisma",
+    "db:seed": "prisma db seed --schema=prisma/schema.dev.prisma",
     "seed": "tsx prisma/seed.ts"
   },
   "prisma": {
