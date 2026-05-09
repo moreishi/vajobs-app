@@ -1,0 +1,15 @@
+export const ROUTES = {
+  HOME: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  DASHBOARD: '/dashboard',
+  JOBS: '/jobs',
+  JOB_DETAIL: (id: string) => `/jobs/${id}` as const,
+  NEW_JOB: '/dashboard/jobs/new',
+  DASHBOARD_APPLICATIONS: '/dashboard/applications',
+  DASHBOARD_APPLICATION_DETAIL: (id: string) => `/dashboard/applications/${id}` as const,
+  TALENTS: '/talents',
+  TALENT_DETAIL: (id: string) => `/talents/${id}` as const,
+  PROFILE: '/dashboard/profile',
+  SETTINGS: '/dashboard/settings',
+} as const
