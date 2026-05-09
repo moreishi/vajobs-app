@@ -1,4 +1,4 @@
-export type ProviderName = 'stripe' | 'paypal' | 'hitpay' | 'xendit'
+export type ProviderName = 'stripe' | 'paypal' | 'hitpay' | 'xendit' | 'maya'
 
 export interface CreateCheckoutParams {
   connectsAmount: number
@@ -32,10 +32,11 @@ export interface PaymentProvider {
   handleWebhook(request: Request): Promise<WebhookResult>
 }
 
-export const PROVIDER_NAMES: ProviderName[] = ['stripe', 'paypal', 'hitpay', 'xendit']
+export const PROVIDER_NAMES: ProviderName[] = ['stripe', 'paypal', 'hitpay', 'xendit', 'maya']
 export const PROVIDER_LABELS: Record<ProviderName, string> = {
   stripe: 'Stripe',
   paypal: 'PayPal',
   hitpay: 'HitPay',
   xendit: 'Xendit',
+  maya: 'Maya',
 }

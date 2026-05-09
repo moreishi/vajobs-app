@@ -8,6 +8,7 @@ const PROVIDER_WEBHOOK_PATHS: Record<ProviderName, string> = {
   paypal: '/api/payments/paypal/webhook',
   hitpay: '/api/payments/hitpay/webhook',
   xendit: '/api/payments/xendit/webhook',
+  maya: '/api/payments/maya/webhook',
 }
 
 export function ProviderStatusCard({ provider, isActive }: { provider: ProviderName; isActive: boolean }) {
