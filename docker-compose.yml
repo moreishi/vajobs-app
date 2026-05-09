@@ -3,15 +3,15 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: talent_hub
-      POSTGRES_PASSWORD: talent_hub
-      POSTGRES_DB: talent_hub
+      POSTGRES_USER: ${POSTGRES_USER:-talent_hub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-talent_hub}
+      POSTGRES_DB: ${POSTGRES_DB:-talent_hub}
     ports:
-      - "5432:5432"
+      - "${PG_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: pg_isready -U talent_hub -d talent_hub
+      test: pg_isready -U ${POSTGRES_USER:-talent_hub} -d ${POSTGRES_DB:-talent_hub}
       interval: 5s
       timeout: 3s
       retries: 5
@@ -21,13 +21,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://talent_hub:talent_hub@db:5432/talent_hub?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-talent_hub}:${POSTGRES_PASSWORD:-talent_hub}@db:5432/${POSTGRES_DB:-talent_hub}?schema=public
       - NODE_ENV=production
-      - AUTH_URL=http://localhost:3000
+      - AUTH_URL=${AUTH_URL:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy

@@ -83,13 +83,17 @@ The compose file spins up two services:
 - **`db`** — PostgreSQL 16 with a named volume (`pg_data`) for data persistence
 - **`app`** — The Next.js app, waits for Postgres health check before starting
 
-The app reads extra environment variables from your `.env` file (via `env_file`), but `DATABASE_URL` and `AUTH_URL` are set in compose to point at the Postgres container. At minimum, set `AUTH_SECRET` in `.env`:
+All credentials are pulled from your `.env` file using `${VAR:-default}` syntax — edit `.env` to customize:
 
 ```bash
-# Generate a secure secret
-openssl rand -hex 32
+# Edit .env to set your Postgres credentials (or keep the defaults)
+POSTGRES_USER=talent_hub
+POSTGRES_PASSWORD=talent_hub
+POSTGRES_DB=talent_hub
 
-# Edit .env and update AUTH_SECRET
+# Generate a secure auth secret
+openssl rand -hex 32
+# Then paste it into .env as AUTH_SECRET
 ```
 
 **Build and run manually (without compose):**
