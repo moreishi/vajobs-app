@@ -11,6 +11,10 @@ export type NotificationType =
   | 'interview_scheduled'
   | 'interview_cancelled'
   | 'message_received'
+  | 'review_received'
+  | 'engagement_ended'
+  | 'connects_purchased'
+  | 'payment_completed'
 
 export async function createNotification({
   userId,

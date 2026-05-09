@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { createNotification } from '@/actions/notifications'
 
 export async function getEngagements(userId: string, role: string, status?: string) {
   const session = await auth()
@@ -71,6 +72,14 @@ export async function endEngagement(engagementId: string) {
   await prisma.engagement.update({
     where: { id: engagementId },
     data: { status: 'ended', endDate: new Date() },
+  })
+
+  await createNotification({
+    userId: engagement.talentId,
+    type: 'engagement_ended',
+    title: 'Engagement Ended',
+    body: 'Your engagement has been ended by the client.',
+    link: ROUTES.ENGAGEMENT_DETAIL(engagementId),
   })
 
   revalidatePath(ROUTES.ENGAGEMENTS)

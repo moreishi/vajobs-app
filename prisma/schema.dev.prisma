@@ -31,6 +31,7 @@ model User {
   reviewsReceived     Review[]               @relation("Reviewee")
   talentEngagements   Engagement[]           @relation("TalentEngagements")
   clientEngagements   Engagement[]           @relation("ClientEngagements")
+  paymentOrders       PaymentOrder[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -198,16 +199,46 @@ model SavedJob {
 }
 
 model ConnectTransaction {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Int
-  type        String
-  description String?
-  createdAt   DateTime @default(now())
+  id             String       @id @default(cuid())
+  userId         String
+  amount         Int
+  type           String
+  description    String?
+  paymentOrderId String?      @unique
+  createdAt      DateTime     @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentOrder PaymentOrder? @relation(fields: [paymentOrderId], references: [id])
 
   @@index([userId])
+}
+
+model PaymentSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+
+model PaymentOrder {
+  id                String    @id @default(cuid())
+  userId            String
+  connectsAmount    Int
+  priceInCents      Int
+  currency          String    @default("usd")
+  provider          String
+  providerSessionId String?
+  providerOrderId   String?
+  status            String    @default("pending")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectTransaction ConnectTransaction?
+
+  @@index([userId])
+  @@index([providerSessionId])
+  @@index([status])
 }
 
 model ClientProfile {

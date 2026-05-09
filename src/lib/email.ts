@@ -35,14 +35,40 @@ export async function sendEmail({ to, subject, html }: EmailPayload) {
 
 export function buildEmailHtml(body: string, cta?: { text: string; url: string }) {
   return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px">
-      <div style="font-size:24px;font-weight:700;margin-bottom:24px">VA Jobs Online</div>
-      <p style="font-size:15px;line-height:1.5;color:#374151;margin:0 0 24px">${body}</p>
-      ${cta ? `<a href="${cta.url}" style="display:inline-block;background-color:#000;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">${cta.text}</a>` : ''}
-      <p style="font-size:12px;color:#9ca3af;margin-top:24px;border-top:1px solid #e5e7eb;padding-top:12px">
-        You received this because you have an account on VA Jobs Online.
-      </p>
-    </div>
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%">
+              <tr>
+                <td style="padding-bottom:16px;text-align:center">
+                  <div style="font-size:22px;font-weight:700;color:#18181b;letter-spacing:-0.5px">VA Jobs Online</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="background-color:#ffffff;border-radius:12px;padding:32px;box-shadow:0 1px 3px rgba(0,0,0,0.08)">
+                  <p style="font-size:15px;line-height:1.6;color:#3f3f46;margin:0 0 24px">${body}</p>
+                  ${cta ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px"><tr><td style="background-color:#18181b;border-radius:8px;padding:12px 24px;text-align:center"><a href="${cta.url}" style="color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;display:inline-block">${cta.text}</a></td></tr></table>` : ''}
+                  <p style="font-size:13px;line-height:1.5;color:#71717a;margin:0">
+                    You received this because you have an account on VA Jobs Online.<br>
+                    If you no longer wish to receive these emails, you can update your preferences in your account settings.
+                  </p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top:16px;text-align:center">
+                  <p style="font-size:11px;color:#a1a1aa;margin:0">&copy; ${new Date().getFullYear()} VA Jobs Online. All rights reserved.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
   `
 }
 

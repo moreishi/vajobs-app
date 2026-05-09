@@ -4,7 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES, CONNECT_PACKAGES } from '@/lib/constants'
+import { createNotification } from '@/actions/notifications'
 
+/** @deprecated Use createConnectsCheckout from @/actions/payments instead */
 export async function purchaseConnects(_prevState: { error?: string; success?: boolean } | undefined, formData: FormData) {
   const session = await auth()
   const userId = session?.user?.id
@@ -27,6 +29,14 @@ export async function purchaseConnects(_prevState: { error?: string; success?: b
         description: `Purchased ${pkg.amount} connects for $${pkg.price}`,
       },
     })
+  })
+
+  await createNotification({
+    userId,
+    type: 'connects_purchased',
+    title: 'Connects Purchased',
+    body: `You purchased ${pkg.amount} connects for $${pkg.price}. Your new balance has been updated.`,
+    link: ROUTES.DASHBOARD,
   })
 
   revalidatePath(ROUTES.DASHBOARD)

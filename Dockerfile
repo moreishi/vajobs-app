@@ -35,4 +35,4 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 EXPOSE 3000
 
 # Run migrations, then start
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy; node server.js"]

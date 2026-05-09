@@ -19,12 +19,12 @@ describe('buildEmailHtml', () => {
     const html = buildEmailHtml('Body text', { text: 'View Dashboard', url: 'https://example.com/dashboard' })
     expect(html).toContain('View Dashboard')
     expect(html).toContain('https://example.com/dashboard')
-    expect(html).toContain('background-color:#000')
+    expect(html).toContain('background-color:#18181b')
   })
 
   it('does not include CTA when not provided', () => {
     const html = buildEmailHtml('Body text')
-    expect(html).not.toContain('background-color:#000')
+    expect(html).not.toContain('background-color:#18181b')
   })
 })
 

@@ -4,6 +4,8 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     application: { findUnique: vi.fn() },
     review: { findUnique: vi.fn(), create: vi.fn(), findMany: vi.fn(), aggregate: vi.fn() },
+    notification: { create: vi.fn() },
+    user: { findUnique: vi.fn() },
   },
 }))
 
@@ -13,6 +15,11 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+}))
+
+vi.mock('@/lib/email', () => ({
+  sendEmail: vi.fn(),
+  buildEmailHtml: vi.fn(() => '<html></html>'),
 }))
 
 const { prisma } = await import('@/lib/prisma')

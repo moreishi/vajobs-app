@@ -129,6 +129,13 @@ async function main() {
       },
     })
   }
+  await prisma.paymentSetting.upsert({
+    where: { key: 'active_provider' },
+    update: { value: 'stripe' },
+    create: { key: 'active_provider', value: 'stripe' },
+  })
+  console.log('  Set default payment provider to Stripe')
+
   console.log(`  Created ${SAMPLE_JOBS.length} sample job posts`)
 
   console.log('\nDone!')

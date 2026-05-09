@@ -3,7 +3,9 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PurchaseForm } from '@/components/connects/purchase-form'
+import { CheckoutButton } from '@/components/payments/checkout-button'
+import { getActiveProvider } from '@/lib/payments/registry'
+import { PROVIDER_LABELS } from '@/lib/payments/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +18,9 @@ export default async function ConnectsPage() {
     where: { id: session.user.id },
     select: { connects: true },
   })
+
+  const { name: activeProviderName } = await getActiveProvider()
+  const providerLabel = PROVIDER_LABELS[activeProviderName]
 
   const { getConnectHistory } = await import('@/actions/connects')
   const { transactions, total } = await getConnectHistory(1, 50)
@@ -40,7 +45,10 @@ export default async function ConnectsPage() {
       <Card className="mb-8">
         <CardHeader><CardTitle>Buy Connects</CardTitle></CardHeader>
         <CardContent>
-          <PurchaseForm />
+          <p className="mb-3 text-xs text-muted-foreground">
+            Payments processed via {providerLabel}
+          </p>
+          <CheckoutButton providerName={activeProviderName} />
         </CardContent>
       </Card>
 

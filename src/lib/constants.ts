@@ -29,4 +29,5 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   RESET_PASSWORD_LINK: (token: string) => `/reset-password?token=${token}` as const,
+  ADMIN_PAYMENTS: '/dashboard/admin/payments',
 } as const

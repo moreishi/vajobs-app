@@ -7,6 +7,8 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    notification: { create: vi.fn() },
+    user: { findUnique: vi.fn() },
   },
 }))
 
@@ -23,6 +25,11 @@ vi.mock('@/lib/constants', () => ({
     ENGAGEMENTS: '/dashboard/engagements',
     ENGAGEMENT_DETAIL: (id: string) => `/dashboard/engagements/${id}`,
   },
+}))
+
+vi.mock('@/lib/email', () => ({
+  sendEmail: vi.fn(),
+  buildEmailHtml: vi.fn(() => '<html></html>'),
 }))
 
 const { prisma } = await import('@/lib/prisma')

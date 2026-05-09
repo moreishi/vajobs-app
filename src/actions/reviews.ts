@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { createNotification } from '@/actions/notifications'
 
 export async function createReview(applicationId: string, formData: FormData) {
   const session = await auth()
@@ -37,6 +38,14 @@ export async function createReview(applicationId: string, formData: FormData) {
       rating,
       comment,
     },
+  })
+
+  await createNotification({
+    userId: application.applicantId,
+    type: 'review_received',
+    title: 'New Review',
+    body: `You received a ${rating}-star review for your work on "${application.jobPost.title}"`,
+    link: ROUTES.TALENT_DETAIL(application.applicantId),
   })
 
   revalidatePath(ROUTES.TALENT_DETAIL(application.applicantId))
