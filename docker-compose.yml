@@ -6,6 +6,12 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:?Set DATABASE_URL to your Postgres connection string}
+      # PostgreSQL connection — all components are dynamic
+      # Reference: postgres://postgres:4tlh02cZx7EHe9KZPIKFGG5cR9ilwNmlOLpnfb7bhLAQjB25mo4whudknuMZWGOz@xrvqwj5ynqw32fnlyqj9dqpb:5432/postgres
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST:?Set POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB:-postgres}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
       - NODE_ENV=production
       - AUTH_URL=${AUTH_URL:-http://localhost:3000}
