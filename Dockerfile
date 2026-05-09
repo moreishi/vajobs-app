@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:lts-alpine AS base
 RUN corepack enable && corepack prepare npm@latest --activate
 
 # ── Install deps ──
