@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "db:migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts"
   },
   "prisma": {
