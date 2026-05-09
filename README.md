@@ -107,7 +107,32 @@ docker run -p 3000:3000 \
   talent-hub
 ```
 
-### Option 2: Vercel (Recommended for Serverless)
+### Option 2: Coolify
+
+Deploy as a Docker Compose stack on your own server.
+
+**Steps:**
+
+1. Connect your git repository to Coolify
+2. Create a new **Docker Compose** resource
+3. Point it at the repository — Coolify reads `docker-compose.yml` automatically
+4. Set environment variables in Coolify's dashboard (do **not** rely on `.env` — Coolify injects them directly):
+   - `AUTH_SECRET` — `openssl rand -hex 32`
+   - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` — or keep defaults
+   - `AUTH_URL` — your Coolify domain, e.g. `https://app.example.com`
+   - `RESEND_API_KEY`, `EMAIL_FROM` — optional, for email
+   - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — optional
+5. Deploy — Coolify builds the Docker image, starts Postgres, runs migrations, and serves the app
+
+The compose file uses `${VAR:-default}` syntax throughout, so Coolify's env injection works seamlessly. The `pg_data` volume persists your database across restarts.
+
+**Using Coolify's managed PostgreSQL instead:**
+
+If you prefer Coolify's built-in PostgreSQL service:
+1. Create a PostgreSQL service in Coolify and note the internal URL
+2. In the app service, remove the `db` dependency and set `DATABASE_URL` in Coolify's env vars to point at your managed Postgres instance
+
+### Option 3: Vercel (Recommended for Serverless)
 
 ```bash
 # Install Vercel CLI
