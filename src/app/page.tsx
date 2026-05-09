@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { PublicHeader } from '@/components/layout/public-header'
+import { PricingSection } from '@/components/subscriptions/pricing-section'
 
 export const dynamic = 'force-dynamic'
 
@@ -268,6 +269,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Pricing */}
+        <PricingSection />
 
         {/* Testimonials */}
         {recentReviews.length > 0 && (

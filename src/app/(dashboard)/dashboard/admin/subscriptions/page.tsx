@@ -70,22 +70,24 @@ export default async function AdminSubscriptionsPage() {
             <p className="py-8 text-center text-sm text-muted-foreground">No plans created yet.</p>
           ) : (
             <div className="overflow-x-auto">
-              <div className="min-w-[600px] divide-y">
-                <div className="grid grid-cols-7 gap-4 py-2 text-xs font-medium text-muted-foreground">
+              <div className="min-w-[700px] divide-y">
+                <div className="grid grid-cols-8 gap-4 py-2 text-xs font-medium text-muted-foreground">
                   <span>Name</span>
                   <span>Duration</span>
                   <span>Price</span>
                   <span>Connects</span>
+                  <span>Badge</span>
                   <span>Order</span>
                   <span>Active</span>
                   <span></span>
                 </div>
                 {plans.map((plan) => (
-                  <div key={plan.id} className="grid grid-cols-7 gap-4 py-3 text-sm items-center">
+                  <div key={plan.id} className="grid grid-cols-8 gap-4 py-3 text-sm items-center">
                     <span className="font-medium">{plan.name}</span>
                     <span>{plan.durationMonths}mo</span>
                     <span>${(plan.priceInCents / 100).toFixed(2)}</span>
                     <span>{plan.connectsPerPeriod ?? '-'}</span>
+                    <span>{plan.badge ? <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{plan.badge}</span> : '-'}</span>
                     <span>{plan.sortOrder}</span>
                     <span className={plan.active ? 'text-green-600 dark:text-green-400' : 'text-destructive'}>
                       {plan.active ? 'Yes' : 'No'}

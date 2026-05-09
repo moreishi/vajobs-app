@@ -131,12 +131,33 @@ async function main() {
       },
     })
   }
-  // Seed subscription plans
+  // Seed subscription plans (tiered pricing)
   const plans = [
-    { name: 'Monthly', description: 'Billed monthly — full access', durationMonths: 1, priceInCents: 2999, connectsPerPeriod: 30, sortOrder: 1 },
-    { name: 'Quarterly', description: '3 months — save $10', durationMonths: 3, priceInCents: 7999, connectsPerPeriod: 100, sortOrder: 2 },
-    { name: 'Semi-Annual', description: '6 months — save $30', durationMonths: 6, priceInCents: 14999, connectsPerPeriod: 220, sortOrder: 3 },
-    { name: 'Annual', description: '12 months — best value', durationMonths: 12, priceInCents: 24999, connectsPerPeriod: 500, sortOrder: 4 },
+    {
+      name: 'Starter',
+      description: 'Try premium quality with low risk',
+      durationMonths: 1,
+      priceInCents: 4900,
+      connectsPerPeriod: 30,
+      sortOrder: 1,
+    },
+    {
+      name: 'Growth',
+      description: 'For SMEs and agencies with regular hiring needs',
+      durationMonths: 1,
+      priceInCents: 14900,
+      connectsPerPeriod: 100,
+      badge: 'Most Popular',
+      sortOrder: 2,
+    },
+    {
+      name: 'Scale',
+      description: 'White-glove for teams',
+      durationMonths: 1,
+      priceInCents: 34900,
+      connectsPerPeriod: 350,
+      sortOrder: 3,
+    },
   ]
 
   for (const p of plans) {
@@ -144,9 +165,9 @@ async function main() {
   }
   console.log(`  Created ${plans.length} subscription plans`)
 
-  // Give client an active subscription
-  const monthlyPlan = await prisma.subscriptionPlan.findFirstOrThrow({
-    where: { name: 'Monthly' },
+  // Give client a Starter subscription
+  const starterPlan = await prisma.subscriptionPlan.findFirstOrThrow({
+    where: { name: 'Starter' },
   })
   const periodStart = new Date()
   const periodEnd = new Date()
@@ -154,7 +175,7 @@ async function main() {
   await prisma.clientSubscription.create({
     data: {
       userId: client.id,
-      planId: monthlyPlan.id,
+      planId: starterPlan.id,
       status: 'active',
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,

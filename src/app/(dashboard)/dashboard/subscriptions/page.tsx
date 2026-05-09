@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { getActiveProvider } from '@/lib/payments/registry'
 import { PROVIDER_LABELS } from '@/lib/payments/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { buttonVariants } from '@/components/ui/button'
 import { SubscriptionPlansList } from '@/components/subscriptions/subscription-plans-list'
 import { CurrentSubscriptionCard } from '@/components/subscriptions/current-subscription-card'
 
@@ -32,10 +33,13 @@ export default async function SubscriptionsPage() {
     }),
   ])
 
-  // Compute user's subscription history count
-  const historyCount = await prisma.clientSubscription.count({
-    where: { userId: session.user.id },
-  })
+  // Compute counts
+  const [historyCount, billingCount] = await Promise.all([
+    prisma.clientSubscription.count({ where: { userId: session.user.id } }),
+    prisma.paymentOrder.count({
+      where: { userId: session.user.id, type: 'subscription', status: 'completed' },
+    }),
+  ])
 
   return (
     <>
@@ -75,21 +79,36 @@ export default async function SubscriptionsPage() {
         </CardContent>
       </Card>
 
-      {/* Subscription History */}
-      {historyCount > 0 && (
+      {/* Quick Links */}
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Subscription History ({historyCount})</CardTitle>
+            <CardTitle>Subscription History {historyCount > 0 && <span className="text-sm font-normal text-muted-foreground">({historyCount})</span>}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              <Link href="/dashboard/subscriptions/history" className="text-primary hover:underline">
-                View full history
-              </Link>
+            <p className="mb-3 text-sm text-muted-foreground">
+              View past subscriptions, status changes, and renewal history.
             </p>
+            <Link href="/dashboard/subscriptions/history" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              View History
+            </Link>
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Billing & Invoices {billingCount > 0 && <span className="text-sm font-normal text-muted-foreground">({billingCount})</span>}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">
+              View payment receipts, billing history, and download invoices.
+            </p>
+            <Link href="/dashboard/subscriptions/billing" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              View Billing
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </>
   )
 }

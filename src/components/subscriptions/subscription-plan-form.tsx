@@ -13,6 +13,7 @@ interface Plan {
   durationMonths: number
   priceInCents: number
   connectsPerPeriod: number | null
+  badge: string | null
   active: boolean
   sortOrder: number
 }
@@ -30,6 +31,10 @@ export function SubscriptionPlanForm({ plan }: { plan?: Plan | null }) {
       <div>
         <Label htmlFor="description">Description</Label>
         <Input id="description" name="description" defaultValue={plan?.description ?? ''} />
+      </div>
+      <div>
+        <Label htmlFor="badge">Badge</Label>
+        <Input id="badge" name="badge" placeholder="e.g. Most Popular" defaultValue={plan?.badge ?? ''} />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>

@@ -175,6 +175,7 @@ export async function createPlan(data: {
   durationMonths: number
   priceInCents: number
   connectsPerPeriod?: number
+  badge?: string
   sortOrder?: number
 }) {
   const session = await auth()
@@ -187,6 +188,7 @@ export async function createPlan(data: {
       durationMonths: data.durationMonths,
       priceInCents: data.priceInCents,
       connectsPerPeriod: data.connectsPerPeriod,
+      badge: data.badge,
       sortOrder: data.sortOrder ?? 0,
     },
   })
@@ -203,6 +205,7 @@ export async function updatePlan(
     durationMonths?: number
     priceInCents?: number
     connectsPerPeriod?: number
+    badge?: string
     active?: boolean
     sortOrder?: number
   },
@@ -217,6 +220,34 @@ export async function updatePlan(
 
   revalidatePath('/dashboard/admin/subscriptions')
   return { plan }
+}
+
+export async function getSubscriptionInvoices(page = 1, pageSize = 20) {
+  const session = await auth()
+  if (!session?.user?.id) return { invoices: [], total: 0 }
+
+  const [invoices, total] = await Promise.all([
+    prisma.paymentOrder.findMany({
+      where: {
+        userId: session.user.id,
+        type: 'subscription',
+        status: 'completed',
+      },
+      include: { plan: true, clientSubscription: true },
+      orderBy: { completedAt: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.paymentOrder.count({
+      where: {
+        userId: session.user.id,
+        type: 'subscription',
+        status: 'completed',
+      },
+    }),
+  ])
+
+  return { invoices, total }
 }
 
 export async function getSubscriptionManagementList() {
