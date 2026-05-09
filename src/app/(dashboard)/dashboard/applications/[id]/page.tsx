@@ -12,6 +12,7 @@ import { MessageBubble } from '@/components/messages/message-bubble'
 import { MessageForm } from '@/components/messages/message-form'
 import { InterviewDetails } from '@/components/interviews/interview-details'
 import { InterviewForm } from '@/components/interviews/interview-form'
+import { ReviewForm } from '@/components/reviews/review-form'
 import type { ApplicationStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -86,6 +87,11 @@ export default async function ApplicationDetailPage({
                 />
               </CardContent>
             </Card>
+          )}
+
+          {/* Review (Client only, after accepted) */}
+          {isPoster && !isApplicant && application.status === 'accepted' && (
+            <ReviewForm applicationId={application.id} />
           )}
 
           {/* Withdraw (Talent only) */}

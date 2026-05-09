@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { SignOutForm } from '@/components/auth/sign-out-form'
 import { JobCard } from '@/components/jobs/job-card'
+import { JobSearch } from '@/components/jobs/job-search'
+import { Pagination } from '@/components/pagination'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
 export const metadata = {
@@ -11,14 +13,54 @@ export const metadata = {
   description: 'Browse open positions and find your next opportunity',
 }
 
-export default async function JobsPage() {
+export const dynamic = 'force-dynamic'
+
+const PAGE_SIZE = 12
+
+export default async function JobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ query?: string; type?: string; skills?: string; page?: string }>
+}) {
   const session = await auth()
   const isLoggedIn = !!session?.user
+  const params = await searchParams
+  const currentPage = Math.max(1, parseInt(params.page || '1'))
 
-  const prismaJobs = await prisma.jobPost.findMany({
-    where: { status: 'open' },
-    orderBy: { createdAt: 'desc' },
-  })
+  const where: Record<string, unknown> = { status: 'open' }
+
+  if (params.type) {
+    where.type = params.type
+  }
+
+  if (params.query) {
+    where.OR = [
+      { title: { contains: params.query, mode: 'insensitive' } },
+      { description: { contains: params.query, mode: 'insensitive' } },
+      { shortDescription: { contains: params.query, mode: 'insensitive' } },
+    ]
+  }
+
+  if (params.skills) {
+    const skillFilters = params.skills.split(',').map((s) => s.trim()).filter(Boolean)
+    if (skillFilters.length > 0) {
+      where.AND = skillFilters.map((skill) => ({
+        skills: { contains: skill, mode: 'insensitive' },
+      }))
+    }
+  }
+
+  const [total, prismaJobs] = await Promise.all([
+    prisma.jobPost.count({ where }),
+    prisma.jobPost.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (currentPage - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+  ])
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const jobs: JobPost[] = prismaJobs.map(j => ({
     id: j.id,
@@ -36,17 +78,22 @@ export default async function JobsPage() {
     updated_at: j.updatedAt.toISOString(),
   }))
 
+  const paginationParams: Record<string, string> = {}
+  if (params.query) paginationParams.query = params.query
+  if (params.type) paginationParams.type = params.type
+  if (params.skills) paginationParams.skills = params.skills
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="text-xl font-bold">Talent Hub</Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
             <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Jobs
+              Jobs
             </Link>
             <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Talents
+              Talents
             </Link>
             {isLoggedIn ? (
               <>
@@ -72,16 +119,32 @@ export default async function JobsPage() {
           </p>
         </div>
 
+        <div className="mb-8">
+          <JobSearch
+            initialQuery={params.query || ''}
+            initialType={params.type || ''}
+            initialSkills={params.skills || ''}
+          />
+        </div>
+
         {jobs.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job as JobPost} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job as JobPost} />
+              ))}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              basePath="/jobs"
+              params={paginationParams}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-lg text-muted-foreground">No open positions right now.</p>
-            <p className="mt-1 text-sm text-muted-foreground">Check back later for new opportunities.</p>
+            <p className="text-lg text-muted-foreground">No open positions match your search.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search terms or filters.</p>
           </div>
         )}
       </main>

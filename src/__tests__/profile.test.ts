@@ -214,7 +214,7 @@ describe('searchTalents', () => {
         where: expect.objectContaining({ isPublic: true }),
       })
     )
-    expect(result).toEqual([])
+    expect(result).toEqual({ profiles: [], total: 0 })
   })
 
   it('filters by query in headline', async () => {
@@ -234,8 +234,8 @@ describe('searchTalents', () => {
 
     const result = await searchTalents({ query: 'react' })
 
-    expect(result).toHaveLength(1)
-    expect(result[0].headline).toBe('Senior React Developer')
+    expect(result.profiles).toHaveLength(1)
+    expect(result.profiles[0].headline).toBe('Senior React Developer')
   })
 
   it('filters by skills parameter', async () => {
@@ -255,8 +255,8 @@ describe('searchTalents', () => {
 
     const result = await searchTalents({ skills: 'TypeScript' })
 
-    expect(result).toHaveLength(1)
-    expect(result[0].userId).toBe('talent-id')
+    expect(result.profiles).toHaveLength(1)
+    expect(result.profiles[0].userId).toBe('talent-id')
   })
 
   it('filters by availability', async () => {

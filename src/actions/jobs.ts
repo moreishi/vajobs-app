@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -49,6 +50,96 @@ export async function createJob(formData: FormData) {
   })
 
   redirect(ROUTES.JOBS)
+}
+
+export async function updateJob(jobId: string, formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Not authenticated' }
+  if (session.user.role !== 'client' && session.user.role !== 'admin') {
+    return { error: 'Only clients can edit job posts' }
+  }
+
+  const job = await prisma.jobPost.findUnique({ where: { id: jobId } })
+  if (!job) return { error: 'Job not found' }
+  if (job.posterId !== session.user.id && session.user.role !== 'admin') {
+    return { error: 'Not authorized' }
+  }
+
+  const title = (formData.get('title') as string)?.trim()
+  const description = (formData.get('description') as string)?.trim()
+  const shortDescription = (formData.get('shortDescription') as string)?.trim() || null
+  const location = (formData.get('location') as string)?.trim() || null
+  const type = formData.get('type') as string
+  const salaryRange = (formData.get('salaryRange') as string)?.trim() || null
+  const skillsRaw = formData.get('skills') as string
+  const status = formData.get('status') as string || 'open'
+
+  if (!title || title.length < 3) return { error: 'Title must be at least 3 characters' }
+  if (!description || description.length < 20) return { error: 'Description must be at least 20 characters' }
+  if (!JOB_TYPES.includes(type as typeof JOB_TYPES[number])) return { error: 'Invalid job type' }
+
+  const skills = skillsRaw
+    ? skillsRaw.split(',').map((s) => s.trim()).filter(Boolean)
+    : []
+
+  await prisma.jobPost.update({
+    where: { id: jobId },
+    data: {
+      title,
+      description,
+      shortDescription,
+      location,
+      type,
+      salaryRange,
+      skills: JSON.stringify(skills),
+      status: status === 'draft' ? 'draft' : 'open',
+    },
+  })
+
+  revalidatePath(ROUTES.DASHBOARD)
+  redirect(ROUTES.JOBS)
+}
+
+export async function getJob(jobId: string) {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  const job = await prisma.jobPost.findUnique({
+    where: { id: jobId },
+  })
+
+  if (!job) return null
+  if (job.posterId !== session.user.id && session.user.role !== 'admin') return null
+
+  return {
+    ...job,
+    skills: JSON.parse(job.skills) as string[],
+    createdAt: job.createdAt.toISOString(),
+    updatedAt: job.updatedAt.toISOString(),
+  }
+}
+
+export async function updateJobStatus(jobId: string, formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Not authenticated' }
+  if (session.user.role !== 'client' && session.user.role !== 'admin') {
+    return { error: 'Only clients can update job status' }
+  }
+
+  const job = await prisma.jobPost.findUnique({ where: { id: jobId } })
+  if (!job) return { error: 'Job not found' }
+  if (job.posterId !== session.user.id) return { error: 'Not authorized' }
+
+  const status = formData.get('status') as string
+  if (status !== 'open' && status !== 'closed') return { error: 'Invalid status' }
+
+  await prisma.jobPost.update({
+    where: { id: jobId },
+    data: { status },
+  })
+
+  revalidatePath(ROUTES.DASHBOARD)
+  return { success: true }
 }
 
 export async function seedJobs() {

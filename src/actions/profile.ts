@@ -104,8 +104,10 @@ export async function searchTalents(searchParams: {
   query?: string
   skills?: string
   availability?: string
+  page?: number
+  pageSize?: number
 }) {
-  const { query, skills, availability } = searchParams
+  const { query, skills, availability, page = 1, pageSize = 12 } = searchParams
 
   const where: Record<string, unknown> = { isPublic: true }
 
@@ -149,5 +151,8 @@ export async function searchTalents(searchParams: {
     }
   }
 
-  return result
+  const total = result.length
+  const paginated = result.slice((page - 1) * pageSize, page * pageSize)
+
+  return { profiles: paginated, total }
 }

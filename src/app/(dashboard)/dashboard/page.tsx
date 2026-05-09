@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
+import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
+import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -22,133 +24,287 @@ export default async function DashboardPage() {
   const role = (user.role as Role) || 'guest'
   const userId = user.id!
 
-  let connects = 0
   if (role === 'talent') {
-    const u = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { connects: true },
-    })
-    connects = u?.connects ?? 0
+    const [u, pendingApps, interviews, acceptedApps] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { connects: true },
+      }),
+      prisma.application.count({
+        where: { applicantId: userId, status: { in: ['pending', 'reviewed'] } },
+      }),
+      prisma.application.count({
+        where: { applicantId: userId, status: 'interview' },
+      }),
+      prisma.application.count({
+        where: { applicantId: userId, status: 'accepted' },
+      }),
+    ])
+    const connects = u?.connects ?? 0
+
+    return (
+      <>
+        <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
+
+        <div className="grid gap-4 sm:grid-cols-4 mb-8">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Connects Balance</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold">{connects}</p></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Applications</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold">{pendingApps}</p></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Interviews</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold">{interviews}</p></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Hired</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold">{acceptedApps}</p></CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader><CardTitle>Quick Links</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Link href="/dashboard/messages" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Messages</Link>
+            <Link href="/dashboard/connects" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Buy Connects</Link>
+            <Link href="/dashboard/profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit Profile</Link>
+            <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>My Applications</Link>
+            <Link href="/dashboard/engagements" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Engagements</Link>
+            <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
+            <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
+            <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Jobs</Link>
+          </CardContent>
+        </Card>
+      </>
+    )
   }
 
-  // Client-specific data
-  let myJobPosts: { id: string; title: string; status: string; _count: { applications: number } }[] = []
-  let hiredTalents: { id: string; applicant: { name: string | null; email: string }; jobPost: { title: string } }[] = []
-  if (role === 'client' || role === 'admin') {
-    myJobPosts = await prisma.jobPost.findMany({
+  // ── Client / Admin dashboard ──
+  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned] = await Promise.all([
+    prisma.jobPost.findMany({
       where: { posterId: userId },
-      select: { id: true, title: true, status: true, _count: { select: { applications: true } } },
+      select: { id: true, title: true, status: true, createdAt: true, _count: { select: { applications: true } } },
       orderBy: { createdAt: 'desc' },
-    })
-
-    const accepted = await prisma.application.findMany({
+    }),
+    prisma.application.count({
+      where: { jobPost: { posterId: userId } },
+    }),
+    prisma.application.count({
+      where: { jobPost: { posterId: userId }, status: 'pending' },
+    }),
+    prisma.application.findMany({
+      where: { jobPost: { posterId: userId } },
+      select: {
+        id: true,
+        status: true,
+        biddingConnects: true,
+        createdAt: true,
+        applicant: { select: { id: true, name: true, email: true } },
+        jobPost: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+    prisma.application.findMany({
       where: { jobPost: { posterId: userId }, status: 'accepted' },
-      select: { id: true, applicant: { select: { name: true, email: true } }, jobPost: { select: { title: true } } },
+      select: {
+        id: true,
+        applicant: { select: { name: true, email: true } },
+        jobPost: { select: { title: true } },
+      },
       orderBy: { updatedAt: 'desc' },
-    })
-    hiredTalents = accepted
-  }
+    }),
+    prisma.interview.findMany({
+      where: {
+        application: { jobPost: { posterId: userId } },
+        status: 'scheduled',
+        scheduledAt: { gte: new Date() },
+      },
+      select: {
+        id: true,
+        scheduledAt: true,
+        duration: true,
+        meetingLink: true,
+        application: {
+          select: {
+            id: true,
+            applicant: { select: { name: true, email: true } },
+            jobPost: { select: { id: true, title: true } },
+          },
+        },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      take: 5,
+    }),
+    prisma.application.aggregate({
+      where: { jobPost: { posterId: userId } },
+      _sum: { biddingConnects: true },
+    }),
+  ])
+
+  const activeJobs = jobPosts.filter(j => j.status === 'open').length
+  const totalConnectsEarned = connectsEarned._sum.biddingConnects ?? 0
 
   return (
     <>
       <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
-      <div className="grid gap-6 md:grid-cols-2">
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-4 mb-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Welcome!</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p>You are signed in as <strong>{user.email}</strong>.</p>
-            <p>
-              Role:{' '}
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${roleConfig[role].className}`}>
-                {roleConfig[role].label}
-              </span>
-            </p>
-            <p className="text-sm text-muted-foreground">User ID: {user.id}</p>
-            {role === 'talent' && (
-              <p className="text-sm">
-                Connects balance: <span className="font-bold">{connects}</span>
-              </p>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Jobs</CardTitle></CardHeader>
+          <CardContent><p className="text-3xl font-bold">{activeJobs}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Applications</CardTitle></CardHeader>
+          <CardContent><p className="text-3xl font-bold">{totalAppsResult}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Pending Review</CardTitle></CardHeader>
+          <CardContent><p className="text-3xl font-bold">{pendingReview}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Connects Received</CardTitle></CardHeader>
+          <CardContent><p className="text-3xl font-bold">{totalConnectsEarned}</p></CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Links + Upcoming Interviews */}
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <Card>
+          <CardHeader><CardTitle>Quick Actions</CardTitle></CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Link href="/dashboard/messages" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Messages</Link>
+            <Link href="/dashboard/jobs/new" className={buttonVariants({ size: 'sm' })}>Post a Job</Link>
+            <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>View Applications</Link>
+            <Link href="/talents" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Talents</Link>
+            <Link href="/dashboard/client-profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit Profile</Link>
+            <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
+            <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
+            {role === 'admin' && (
+              <Link href="/dashboard/admin" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Admin Dashboard</Link>
             )}
           </CardContent>
         </Card>
 
-        {(role === 'talent' || role === 'client' || role === 'admin') && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Links</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              {role === 'talent' && (
-                <>
-                  <Link href="/dashboard/profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                    Edit Profile
-                  </Link>
-                  <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                    My Applications
-                  </Link>
-                </>
-              )}
-              {(role === 'client' || role === 'admin') && (
-                <>
-                  <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                    Applications Received
-                  </Link>
-                  <Link href="/dashboard/jobs/new" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                    Post a Job
-                  </Link>
-                  <Link href="/talents" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                    Browse Talents
-                  </Link>
-                </>
-              )}
-              <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                Account Settings
-              </Link>
-              <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                Browse Jobs
-              </Link>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader><CardTitle>Upcoming Interviews</CardTitle></CardHeader>
+          <CardContent>
+            {interviewsUpcoming.length > 0 ? (
+              <div className="divide-y">
+                {interviewsUpcoming.map((iv) => (
+                  <div key={iv.id} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{iv.application.applicant.name || iv.application.applicant.email}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {new Date(iv.scheduledAt).toLocaleDateString()} at{' '}
+                        {new Date(iv.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {iv.duration ? ` · ${iv.duration}min` : ''}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/dashboard/applications/${iv.application.id}`}
+                      className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                    >
+                      View
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-4 text-center">No upcoming interviews.</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {(role === 'client' || role === 'admin') && myJobPosts.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>My Job Posts</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Recent Applications */}
+      <Card className="mb-6">
+        <CardHeader><CardTitle>Recent Applications</CardTitle></CardHeader>
+        <CardContent>
+          {recentApps.length > 0 ? (
             <div className="divide-y">
-              {myJobPosts.map((job) => (
-                <div key={job.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                  <div>
-                    <Link href={`/jobs/${job.id}`} className="font-medium hover:underline">
-                      {job.title}
-                    </Link>
-                    <p className="text-sm text-muted-foreground">
-                      {job.status} &middot; {job._count.applications} application{job._count.applications !== 1 ? 's' : ''}
-                    </p>
+              {recentApps.map((app) => (
+                <div key={app.id} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{app.applicant.name || app.applicant.email}</p>
+                    <p className="truncate text-xs text-muted-foreground">{app.jobPost.title}</p>
                   </div>
-                  <Link href="/dashboard/applications" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                    View Applications
-                  </Link>
+                  <div className="flex items-center gap-2 ml-2">
+                    <ApplicationStatusBadge status={app.status as any} />
+                    <span className="text-xs text-muted-foreground">{app.biddingConnects}c</span>
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-muted-foreground py-4 text-center">No applications yet.</p>
+          )}
+        </CardContent>
+      </Card>
 
-      {(role === 'client' || role === 'admin') && hiredTalents.length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Hired Talents</CardTitle>
-          </CardHeader>
+      {/* My Job Posts */}
+      <Card className="mb-6">
+        <CardHeader><CardTitle>My Job Posts</CardTitle></CardHeader>
+        <CardContent>
+          {jobPosts.length > 0 ? (
+            <div className="divide-y">
+              {jobPosts.map((job) => {
+                const isOpen = job.status === 'open'
+                return (
+                  <div key={job.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0 gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/jobs/${job.id}`} className="font-medium hover:underline">
+                        {job.title}
+                      </Link>
+                      <p className="text-sm text-muted-foreground">
+                        <span className={isOpen ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>{job.status}</span>
+                        {' · '}
+                        {job._count.applications} application{job._count.applications !== 1 ? 's' : ''}
+                        {' · '}
+                        {new Date(job.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Link
+                        href={`/dashboard/applications?jobId=${job.id}`}
+                        className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                      >
+                        Apps
+                      </Link>
+                      <Link
+                        href={`/dashboard/jobs/${job.id}/edit`}
+                        className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+                      >
+                        Edit
+                      </Link>
+                      <JobStatusToggle jobId={job.id} currentStatus={job.status as 'open' | 'closed'} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">You haven&apos;t posted any jobs yet.</p>
+              <Link href="/dashboard/jobs/new" className={buttonVariants({ variant: 'outline', size: 'sm', className: 'mt-3' })}>
+                Post Your First Job
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Hired Talents */}
+      {hired.length > 0 && (
+        <Card>
+          <CardHeader><CardTitle>Hired Talents</CardTitle></CardHeader>
           <CardContent>
             <div className="divide-y">
-              {hiredTalents.map((app) => (
+              {hired.map((app) => (
                 <div key={app.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                   <div>
                     <p className="font-medium">{app.applicant.name || app.applicant.email}</p>

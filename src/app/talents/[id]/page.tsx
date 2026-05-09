@@ -23,6 +23,12 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
     notFound()
   }
 
+  const { getReviews, getTalentRating } = await import('@/actions/reviews')
+  const [reviews, rating] = await Promise.all([
+    getReviews(id),
+    getTalentRating(id),
+  ])
+
   const availabilityColor =
     profile.availability === 'available'
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
@@ -35,12 +41,12 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="text-xl font-bold">Talent Hub</Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
             <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Talents
+              Talents
             </Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Jobs
+              Jobs
             </Link>
             {isLoggedIn ? (
               <>
@@ -113,6 +119,51 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
             )}
           </CardContent>
         </Card>
+
+        {/* Reviews */}
+        <div className="mt-8">
+          <div className="mb-4 flex items-baseline gap-3">
+            <h2 className="text-lg font-semibold">Reviews</h2>
+            {rating.count > 0 && (
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span className="text-yellow-500">{'★'.repeat(Math.round(rating.average))}{'☆'.repeat(5 - Math.round(rating.average))}</span>
+                {rating.average.toFixed(1)} ({rating.count})
+              </span>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No reviews yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((review) => (
+                <Card key={review.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                            {review.reviewer.name?.[0]?.toUpperCase() || review.reviewer.email[0].toUpperCase()}
+                          </div>
+                          <span className="text-sm font-medium">{review.reviewer.name || review.reviewer.email}</span>
+                        </div>
+                        <div className="mt-1 text-yellow-500 text-sm">
+                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {review.comment && (
+                      <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </div>
   )

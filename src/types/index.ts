@@ -112,6 +112,37 @@ export type Profile = {
   }
 }
 
+export type Review = {
+  id: string
+  applicationId: string
+  reviewerId: string
+  revieweeId: string
+  rating: number
+  comment: string | null
+  createdAt: string
+  reviewer?: {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+  }
+}
+
+export type ClientProfile = {
+  id: string
+  userId: string
+  company: string | null
+  title: string | null
+  bio: string | null
+  user?: {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+  }
+  jobCount?: number
+}
+
 declare module 'next-auth' {
   interface User {
     role?: string

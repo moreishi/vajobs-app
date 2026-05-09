@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { createNotification } from '@/actions/notifications'
 import type { ApplicationStatus, InterviewStatus } from '@/types'
 
 const VALID_STATUSES: ApplicationStatus[] = ['pending', 'reviewed', 'interview', 'accepted', 'rejected']
@@ -52,7 +53,23 @@ export async function applyToJob(jobId: string, formData: FormData) {
       where: { id: session.user.id },
       data: { connects: { decrement: biddingConnects } },
     }),
+    prisma.connectTransaction.create({
+      data: {
+        userId: session.user.id,
+        amount: -biddingConnects,
+        type: 'application',
+        description: `Applied to "${job.title}"`,
+      },
+    }),
   ])
+
+  await createNotification({
+    userId: job.posterId,
+    type: 'application_received',
+    title: 'New Application',
+    body: `${session.user.name || session.user.email} applied to "${job.title}" with ${biddingConnects} connects`,
+    link: ROUTES.DASHBOARD_APPLICATIONS,
+  })
 
   revalidatePath(ROUTES.JOB_DETAIL(jobId))
   redirect(ROUTES.DASHBOARD_APPLICATIONS)
@@ -114,7 +131,7 @@ export async function updateApplicationStatus(applicationId: string, formData: F
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { jobPost: { select: { posterId: true } } },
+    include: { jobPost: { select: { posterId: true, title: true } } },
   })
   if (!application) return { error: 'Application not found' }
   if (application.jobPost.posterId !== session.user.id) {
@@ -124,6 +141,14 @@ export async function updateApplicationStatus(applicationId: string, formData: F
   await prisma.application.update({
     where: { id: applicationId },
     data: { status },
+  })
+
+  await createNotification({
+    userId: application.applicantId,
+    type: 'status_updated',
+    title: 'Application Status Updated',
+    body: `Your application for "${application.jobPost.title}" is now "${status}"`,
+    link: ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId),
   })
 
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))
@@ -159,7 +184,7 @@ export async function sendMessage(applicationId: string, formData: FormData) {
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { jobPost: { select: { posterId: true } } },
+    include: { jobPost: { select: { posterId: true, title: true } } },
   })
   if (!application) return { error: 'Application not found' }
 
@@ -180,6 +205,15 @@ export async function sendMessage(applicationId: string, formData: FormData) {
     },
   })
 
+  const otherUserId = isApplicant ? application.jobPost.posterId : application.applicantId
+  await createNotification({
+    userId: otherUserId,
+    type: 'message_received',
+    title: 'New Message',
+    body: `${session.user.name || session.user.email} sent a message about "${application.jobPost.title}"`,
+    link: ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId),
+  })
+
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))
   return { success: true as const }
 }
@@ -193,7 +227,7 @@ export async function scheduleInterview(applicationId: string, formData: FormDat
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { jobPost: { select: { posterId: true } } },
+    include: { jobPost: { select: { posterId: true, title: true } } },
   })
   if (!application) return { error: 'Application not found' }
   if (application.jobPost.posterId !== session.user.id) {
@@ -222,6 +256,14 @@ export async function scheduleInterview(applicationId: string, formData: FormDat
     }),
   ])
 
+  await createNotification({
+    userId: application.applicantId,
+    type: 'interview_scheduled',
+    title: 'Interview Scheduled',
+    body: `An interview has been scheduled for "${application.jobPost.title}" on ${scheduledDate.toLocaleDateString()}`,
+    link: ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId),
+  })
+
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))
   return { success: true as const }
 }
@@ -232,7 +274,7 @@ export async function cancelInterview(applicationId: string) {
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
-    include: { jobPost: { select: { posterId: true } } },
+    include: { jobPost: { select: { posterId: true, title: true } } },
   })
   if (!application) return { error: 'Application not found' }
   if (application.jobPost.posterId !== session.user.id) {
@@ -244,8 +286,64 @@ export async function cancelInterview(applicationId: string) {
     data: { status: 'cancelled' },
   })
 
+  await createNotification({
+    userId: application.applicantId,
+    type: 'interview_cancelled',
+    title: 'Interview Cancelled',
+    body: `The interview for "${application.jobPost.title}" has been cancelled`,
+    link: ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId),
+  })
+
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))
   return { success: true as const }
+}
+
+export async function getConversations() {
+  const session = await auth()
+  if (!session?.user?.id) return []
+
+  const userId = session.user.id
+
+  const applications = await prisma.application.findMany({
+    where: {
+      OR: [
+        { applicantId: userId },
+        { jobPost: { posterId: userId } },
+      ],
+    },
+    include: {
+      jobPost: { select: { id: true, title: true, posterId: true, posterName: true } },
+      applicant: { select: { id: true, name: true, email: true } },
+      conversation: {
+        include: {
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  })
+
+  return applications
+    .filter((app) => app.conversation && app.conversation.messages.length > 0)
+    .map((app) => {
+      const isApplicant = app.applicantId === userId
+      const lastMessage = app.conversation!.messages[0]
+      const otherPartyName = isApplicant
+        ? app.jobPost.posterName || app.jobPost.posterId
+        : app.applicant?.name || app.applicant?.email || 'Unknown'
+      return {
+        applicationId: app.id,
+        jobTitle: app.jobPost.title,
+        jobId: app.jobPost.id,
+        otherPartyName,
+        lastMessageContent: lastMessage.content,
+        lastMessageAt: lastMessage.createdAt.toISOString(),
+        lastMessageFromMe: lastMessage.senderId === userId,
+      }
+    })
 }
 
 export async function getApplicationById(id: string) {

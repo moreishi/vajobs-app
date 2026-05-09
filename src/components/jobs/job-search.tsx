@@ -1,43 +1,43 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-export function TalentSearch({
+export function JobSearch({
   initialQuery,
+  initialType,
   initialSkills,
-  initialAvailability,
 }: {
   initialQuery: string
+  initialType: string
   initialSkills: string
-  initialAvailability: string
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(initialQuery)
+  const [type, setType] = useState(initialType)
   const [skills, setSkills] = useState(initialSkills)
-  const [availability, setAvailability] = useState(initialAvailability)
 
   function handleSearch(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const params = new URLSearchParams()
     if (query) params.set('query', query)
+    if (type) params.set('type', type)
     if (skills) params.set('skills', skills)
-    if (availability) params.set('availability', availability)
-    router.push(`/talents${params.toString() ? `?${params.toString()}` : ''}`)
+    router.push(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   function handleClear() {
     setQuery('')
+    setType('')
     setSkills('')
-    setAvailability('')
-    router.push('/talents')
+    router.push('/jobs')
   }
 
-  const hasFilters = !!(initialQuery || initialSkills || initialAvailability)
+  const hasFilters = !!(initialQuery || initialType || initialSkills)
 
   return (
     <form onSubmit={handleSearch} className="space-y-4">
@@ -47,10 +47,25 @@ export function TalentSearch({
           <Input
             id="query"
             type="text"
-            placeholder="Search by name, headline, or skills..."
+            placeholder="Search by title, description, or skills..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+        </div>
+        <div>
+          <Label htmlFor="type" className="sr-only">Job Type</Label>
+          <select
+            id="type"
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">All types</option>
+            <option value="full-time">Full Time</option>
+            <option value="part-time">Part Time</option>
+            <option value="contract">Contract</option>
+            <option value="freelance">Freelance</option>
+          </select>
         </div>
         <div className="w-full sm:w-auto">
           <Label htmlFor="skills" className="sr-only">Skills</Label>
@@ -61,20 +76,6 @@ export function TalentSearch({
             value={skills}
             onChange={(e) => setSkills(e.target.value)}
           />
-        </div>
-        <div>
-          <Label htmlFor="availability" className="sr-only">Availability</Label>
-          <select
-            id="availability"
-            value={availability}
-            onChange={(e) => setAvailability(e.target.value)}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="">All availability</option>
-            <option value="available">Available</option>
-            <option value="busy">Busy</option>
-            <option value="unavailable">Unavailable</option>
-          </select>
         </div>
         <div className="flex gap-2">
           <Button type="submit">Search</Button>

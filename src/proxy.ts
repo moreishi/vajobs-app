@@ -21,15 +21,22 @@ export default auth((req) => {
   }
 
   // Posting jobs is client/admin only
-  if (nextUrl.pathname.startsWith('/dashboard/jobs/new')) {
+  if (nextUrl.pathname.startsWith('/dashboard/jobs/new') || nextUrl.pathname.match(/^\/dashboard\/jobs\/[\w-]+\/edit$/)) {
     if (role !== 'client' && role !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', nextUrl))
     }
   }
 
-  // Editing profile is talent only
+  // Editing talent profile is talent only
   if (nextUrl.pathname.startsWith('/dashboard/profile')) {
     if (role !== 'talent') {
+      return NextResponse.redirect(new URL('/dashboard', nextUrl))
+    }
+  }
+
+  // Editing client profile is client/admin only
+  if (nextUrl.pathname.startsWith('/dashboard/client-profile')) {
+    if (role !== 'client' && role !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', nextUrl))
     }
   }
@@ -38,6 +45,12 @@ export default auth((req) => {
   if (nextUrl.pathname === '/setup') {
     if (!isLoggedIn) return NextResponse.redirect(new URL('/login', nextUrl))
     if (role !== 'admin') return NextResponse.redirect(new URL('/', nextUrl))
+  }
+
+  // Admin dashboard is admin only
+  if (nextUrl.pathname.startsWith('/dashboard/admin')) {
+    if (!isLoggedIn) return NextResponse.redirect(new URL('/login', nextUrl))
+    if (role !== 'admin') return NextResponse.redirect(new URL('/dashboard', nextUrl))
   }
 })
 

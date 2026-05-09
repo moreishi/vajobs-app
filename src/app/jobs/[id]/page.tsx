@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { SignOutForm } from '@/components/auth/sign-out-form'
 import { ApplyForm } from '@/components/jobs/apply-form'
+import { SaveButton } from '@/components/jobs/save-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
@@ -27,6 +28,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   let hasApplied = false
   let userConnects = 0
+  let isSaved = false
   if (session?.user?.id) {
     const existingApp = await prisma.application.findUnique({
       where: { jobPostId_applicantId: { jobPostId: id, applicantId: session.user.id } },
@@ -40,6 +42,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       })
       userConnects = user?.connects ?? 0
     }
+    const saved = await prisma.savedJob.findUnique({
+      where: { userId_jobPostId: { userId: session.user.id, jobPostId: id } },
+      select: { id: true },
+    })
+    isSaved = !!saved
   }
 
   const typed: JobPost = {
@@ -63,12 +70,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="text-xl font-bold">Talent Hub</Link>
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
             <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Jobs
+              Jobs
             </Link>
             <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Browse Talents
+              Talents
             </Link>
             {isLoggedIn ? (
               <>
@@ -135,31 +142,45 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
             <div className="border-t pt-4 text-xs text-muted-foreground">
               Posted {new Date(typed.created_at).toLocaleDateString()}
-              {typed.poster_name ? ` by ${typed.poster_name}` : ''}
+              {typed.poster_name ? (
+                <> by{' '}
+                  <Link href={`/clients/${typed.poster_id}`} className="underline hover:text-foreground">
+                    {typed.poster_name}
+                  </Link>
+                </>
+              ) : ''}
             </div>
 
             {session?.user?.id ? (
-              isTalent ? (
-                hasApplied ? (
-                  <div className="border-t pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      You have applied to this position.{' '}
-                      <Link href="/dashboard/applications" className="text-primary underline">
-                        View application
-                      </Link>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="border-t pt-4">
-                    <ApplyForm jobId={id} connects={userConnects} />
-                  </div>
-                )
-              ) : null
+              <div className="border-t pt-4">
+                <div className="flex items-start gap-2">
+                  {isTalent ? (
+                    hasApplied ? (
+                      <p className="text-sm text-muted-foreground flex-1">
+                        You have applied to this position.{' '}
+                        <Link href="/dashboard/applications" className="text-primary underline">
+                          View application
+                        </Link>
+                      </p>
+                    ) : (
+                      <div className="flex-1">
+                        <ApplyForm jobId={id} connects={userConnects} />
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-sm text-muted-foreground flex-1" />
+                  )}
+                  <SaveButton jobId={id} isSaved={isSaved} />
+                </div>
+              </div>
             ) : (
               <div className="border-t pt-4">
-                <Link href="/login" className={buttonVariants()}>
-                  Sign in to apply
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link href="/login" className={buttonVariants()}>
+                    Sign in to apply
+                  </Link>
+                  <SaveButton jobId={id} isSaved={isSaved} />
+                </div>
               </div>
             )}
           </CardContent>

@@ -8,6 +8,8 @@ vi.mock('@/lib/prisma', () => ({
     conversation: { findUnique: vi.fn(), create: vi.fn() },
     message: { create: vi.fn() },
     interview: { update: vi.fn(), upsert: vi.fn() },
+    connectTransaction: { create: vi.fn() },
+    notification: { create: vi.fn(), count: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -178,6 +180,14 @@ describe('applyToJob', () => {
         where: { id: 'talent-id' },
         data: { connects: { decrement: 5 } },
       }),
+      prisma.connectTransaction.create({
+        data: {
+          userId: 'talent-id',
+          amount: -5,
+          type: 'application',
+          description: 'Applied to "Test Job"',
+        },
+      }),
     ])
     const { revalidatePath } = await import('next/cache')
     const { redirect } = await import('next/navigation')
@@ -215,7 +225,7 @@ describe('updateApplicationStatus', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     const formData = new FormData()
     formData.set('status', 'reviewed')
@@ -227,7 +237,7 @@ describe('updateApplicationStatus', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     vi.mocked(prisma.application.update).mockResolvedValueOnce(mockApplication)
 
@@ -314,7 +324,7 @@ describe('sendMessage', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     const formData = new FormData()
     formData.set('content', 'Hello!')
@@ -326,7 +336,7 @@ describe('sendMessage', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     vi.mocked(prisma.conversation.findUnique).mockResolvedValueOnce(null)
     vi.mocked(prisma.conversation.create).mockResolvedValueOnce({
@@ -358,7 +368,7 @@ describe('sendMessage', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     vi.mocked(prisma.conversation.findUnique).mockResolvedValueOnce({
       id: 'conv-id',
@@ -405,7 +415,7 @@ describe('scheduleInterview', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-id', role: 'client' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     const formData = new FormData()
     const result = await scheduleInterview('app-id', formData)
@@ -416,7 +426,7 @@ describe('scheduleInterview', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     const formData = new FormData()
     const result = await scheduleInterview('app-id', formData)
@@ -427,7 +437,7 @@ describe('scheduleInterview', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}])
 
@@ -473,7 +483,7 @@ describe('cancelInterview', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     const result = await cancelInterview('app-id')
     expect(result).toEqual({ error: 'Only the job poster can cancel interviews' })
@@ -483,7 +493,7 @@ describe('cancelInterview', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
     })
     vi.mocked(prisma.interview.update).mockResolvedValueOnce({} as any)
 
@@ -515,7 +525,7 @@ describe('getApplicationById', () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-id' } } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
       ...mockApplication,
-      jobPost: { posterId: 'client-id' },
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
       applicant: { id: 'talent-id', name: null, email: 'talent@example.com' },
       conversation: null,
       interview: null,

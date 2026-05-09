@@ -23,6 +23,12 @@ model User {
   sentMessages     Message[]
   applications     Application[] @relation("Applicant")
   profile          Profile?
+  clientProfile    ClientProfile?
+  notifications    Notification[]
+  savedJobs        SavedJob[]
+  connectTransactions ConnectTransaction[]
+  reviewsGiven        Review[]               @relation("Reviewer")
+  reviewsReceived     Review[]               @relation("Reviewee")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -75,6 +81,7 @@ model JobPost {
   posterName       String?
   poster           User     @relation(fields: [posterId], references: [id], onDelete: Cascade)
   applications     Application[]
+  savedBy          SavedJob[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
@@ -93,6 +100,7 @@ model Application {
   applicant    User         @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
   conversation Conversation?
   interview    Interview?
+  review       Review?
 
   @@unique([jobPostId, applicantId])
   @@index([applicantId])
@@ -152,4 +160,71 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([isPublic])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  jobPostId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobPost JobPost @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobPostId])
+  @@index([userId])
+}
+
+model ConnectTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ClientProfile {
+  id      String  @id @default(cuid())
+  userId  String  @unique
+  company String?
+  title   String?
+  bio     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  applicationId String   @unique
+  reviewerId    String
+  revieweeId    String
+  rating        Int
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee    User        @relation("Reviewee", fields: [revieweeId], references: [id], onDelete: Cascade)
+
+  @@index([revieweeId])
 }
