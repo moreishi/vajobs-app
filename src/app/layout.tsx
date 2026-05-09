@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Talent Hub',
+  title: 'VA Jobs Online',
   description: 'Connect with top talent and exciting opportunities',
 }
 

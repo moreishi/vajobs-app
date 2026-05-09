@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+.next
+dev.db
+dev.db-journal
+*.md
+.env.local
+.env.example
+__tests__
+coverage
+.vscode

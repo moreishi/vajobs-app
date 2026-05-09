@@ -83,7 +83,7 @@ export async function signUp(formData: FormData) {
     const verifyUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/verify-email?token=${token}`
     sendEmail({
       to: email,
-      subject: 'Verify your email - Talent Hub',
+      subject: 'Verify your email - VA Jobs Online',
       html: buildEmailHtml(
         'Thanks for signing up! Click the button below to verify your email address and activate your account.',
         { text: 'Verify Email', url: verifyUrl }

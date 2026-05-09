@@ -12,19 +12,22 @@ export async function forgotPassword(formData: FormData) {
   const user = await prisma.user.findUnique({ where: { email } })
   if (!user || !user.password) return { success: true }
 
+  // Invalidate any existing tokens for this email
+  await prisma.verificationToken.deleteMany({
+    where: { identifier: email },
+  })
+
   const token = crypto.randomUUID()
   const expires = new Date(Date.now() + 60 * 60 * 1000)
 
-  await prisma.verificationToken.upsert({
-    where: { identifier_token: { identifier: email, token } },
-    create: { identifier: email, token, expires },
-    update: { token, expires },
+  await prisma.verificationToken.create({
+    data: { identifier: email, token, expires },
   })
 
   const resetUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`
   sendEmail({
     to: email,
-    subject: '[Talent Hub] Reset your password',
+    subject: '[VA Jobs Online] Reset your password',
     html: buildEmailHtml(
       'We received a request to reset your password. Click the button below to set a new one. This link expires in 1 hour.',
       { text: 'Reset Password', url: resetUrl }
@@ -37,9 +40,11 @@ export async function forgotPassword(formData: FormData) {
 export async function resetPassword(formData: FormData) {
   const token = formData.get('token') as string
   const password = formData.get('password') as string
+  const confirmPassword = formData.get('confirmPassword') as string
 
   if (!token || !password) return { error: 'Token and password are required' }
   if (password.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (password !== confirmPassword) return { error: 'Passwords do not match' }
 
   const stored = await prisma.verificationToken.findUnique({ where: { token } })
   if (!stored || stored.expires < new Date()) return { error: 'Invalid or expired reset token' }

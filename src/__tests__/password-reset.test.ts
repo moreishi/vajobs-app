@@ -7,9 +7,10 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
     },
     verificationToken: {
-      upsert: vi.fn(),
+      deleteMany: vi.fn(),
       findUnique: vi.fn(),
       delete: vi.fn(),
+      create: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -69,7 +70,7 @@ describe('forgotPassword', () => {
       email: 'user@example.com',
       password: 'hashed-password',
     } as any)
-    vi.mocked(prisma.verificationToken.upsert).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.verificationToken.create).mockResolvedValueOnce({} as any)
 
     const { sendEmail } = await import('@/lib/email')
 
@@ -78,7 +79,8 @@ describe('forgotPassword', () => {
     const result = await forgotPassword(formData)
 
     expect(result).toEqual({ success: true })
-    expect(prisma.verificationToken.upsert).toHaveBeenCalledOnce()
+    expect(prisma.verificationToken.deleteMany).toHaveBeenCalledWith({ where: { identifier: 'user@example.com' } })
+    expect(prisma.verificationToken.create).toHaveBeenCalledOnce()
     expect(sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'user@example.com',
@@ -92,6 +94,7 @@ describe('resetPassword', () => {
   it('returns error when token is missing', async () => {
     const formData = new FormData()
     formData.set('password', 'newpassword123')
+    formData.set('confirmPassword', 'newpassword123')
     const result = await resetPassword(formData)
     expect(result).toEqual({ error: 'Token and password are required' })
   })
@@ -99,6 +102,7 @@ describe('resetPassword', () => {
   it('returns error when password is missing', async () => {
     const formData = new FormData()
     formData.set('token', 'some-token')
+    formData.set('confirmPassword', 'newpassword123')
     const result = await resetPassword(formData)
     expect(result).toEqual({ error: 'Token and password are required' })
   })
@@ -107,8 +111,18 @@ describe('resetPassword', () => {
     const formData = new FormData()
     formData.set('token', 'some-token')
     formData.set('password', '12345')
+    formData.set('confirmPassword', '12345')
     const result = await resetPassword(formData)
     expect(result).toEqual({ error: 'Password must be at least 6 characters' })
+  })
+
+  it('returns error when passwords do not match', async () => {
+    const formData = new FormData()
+    formData.set('token', 'some-token')
+    formData.set('password', 'newpassword123')
+    formData.set('confirmPassword', 'differentpassword')
+    const result = await resetPassword(formData)
+    expect(result).toEqual({ error: 'Passwords do not match' })
   })
 
   it('returns error when token not found', async () => {
@@ -116,6 +130,7 @@ describe('resetPassword', () => {
     const formData = new FormData()
     formData.set('token', 'invalid-token')
     formData.set('password', 'newpassword123')
+    formData.set('confirmPassword', 'newpassword123')
     const result = await resetPassword(formData)
     expect(result).toEqual({ error: 'Invalid or expired reset token' })
   })
@@ -131,6 +146,7 @@ describe('resetPassword', () => {
     const formData = new FormData()
     formData.set('token', 'expired-token')
     formData.set('password', 'newpassword123')
+    formData.set('confirmPassword', 'newpassword123')
     const result = await resetPassword(formData)
     expect(result).toEqual({ error: 'Invalid or expired reset token' })
   })
@@ -148,6 +164,7 @@ describe('resetPassword', () => {
     const formData = new FormData()
     formData.set('token', 'valid-token')
     formData.set('password', 'newpassword123')
+    formData.set('confirmPassword', 'newpassword123')
     const result = await resetPassword(formData)
 
     expect(result).toEqual({ success: true })

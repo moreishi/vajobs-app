@@ -11,7 +11,7 @@ describe('buildEmailHtml', () => {
   it('returns HTML with body text', () => {
     const html = buildEmailHtml('Your application has been received')
     expect(html).toContain('Your application has been received')
-    expect(html).toContain('Talent Hub')
+    expect(html).toContain('VA Jobs Online')
     expect(html).toContain('You received this because you have an account')
   })
 
@@ -38,7 +38,7 @@ describe('getNotificationEmail', () => {
 
   it('returns subject and body when body is provided', () => {
     const result = getNotificationEmail('application_received', 'New Application', 'Someone applied')
-    expect(result).toEqual({ subject: '[Talent Hub] New Application', body: 'Someone applied' })
+    expect(result).toEqual({ subject: '[VA Jobs Online] New Application', body: 'Someone applied' })
   })
 
   it('returns null when body is not provided', () => {
@@ -85,7 +85,7 @@ describe('sendEmail', () => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Talent Hub <noreply@vajobs.online>',
+        from: 'VA Jobs Online <noreply@vajobs.online>',
         to: 'test@example.com',
         subject: 'Test Subject',
         html: '<p>Hi</p>',

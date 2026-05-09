@@ -17,7 +17,7 @@ export async function sendEmail({ to, subject, html }: EmailPayload) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `Talent Hub <${fromEmail}>`,
+        from: `VA Jobs Online <${fromEmail}>`,
         to,
         subject,
         html,
@@ -36,18 +36,18 @@ export async function sendEmail({ to, subject, html }: EmailPayload) {
 export function buildEmailHtml(body: string, cta?: { text: string; url: string }) {
   return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px">
-      <div style="font-size:24px;font-weight:700;margin-bottom:24px">Talent Hub</div>
+      <div style="font-size:24px;font-weight:700;margin-bottom:24px">VA Jobs Online</div>
       <p style="font-size:15px;line-height:1.5;color:#374151;margin:0 0 24px">${body}</p>
       ${cta ? `<a href="${cta.url}" style="display:inline-block;background-color:#000;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-size:14px">${cta.text}</a>` : ''}
       <p style="font-size:12px;color:#9ca3af;margin-top:24px;border-top:1px solid #e5e7eb;padding-top:12px">
-        You received this because you have an account on Talent Hub.
+        You received this because you have an account on VA Jobs Online.
       </p>
     </div>
   `
 }
 
 export function getNotificationEmail(type: string, title: string, body?: string, link?: string): { subject: string; body: string } | null {
-  const subject = `[Talent Hub] ${title}`
+  const subject = `[VA Jobs Online] ${title}`
 
   if (body) {
     return {

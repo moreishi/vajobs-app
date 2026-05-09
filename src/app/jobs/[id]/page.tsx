@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
-import { SignOutForm } from '@/components/auth/sign-out-form'
 import { ApplyForm } from '@/components/jobs/apply-form'
 import { SaveButton } from '@/components/jobs/save-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { PublicHeader } from '@/components/layout/public-header'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -67,31 +67,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="text-xl font-bold">Talent Hub</Link>
-          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
-            <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Jobs
-            </Link>
-            <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Talents
-            </Link>
-            {isLoggedIn ? (
-              <>
-                <Link href="/dashboard" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                  Dashboard
-                </Link>
-                <SignOutForm />
-              </>
-            ) : (
-              <Link href="/login" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader isLoggedIn={isLoggedIn} />
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
         <Link

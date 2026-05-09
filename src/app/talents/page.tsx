@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
-import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { SignOutForm } from '@/components/auth/sign-out-form'
 import { TalentSearch } from '@/components/talents/talent-search'
 import { Pagination } from '@/components/pagination'
+import { PublicHeader } from '@/components/layout/public-header'
 import type { Profile, Availability } from '@/types'
 
 export const metadata = {
@@ -44,31 +43,7 @@ export default async function TalentsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="text-xl font-bold">Talent Hub</Link>
-          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
-            <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Talents
-            </Link>
-            <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Jobs
-            </Link>
-            {isLoggedIn ? (
-              <>
-                <Link href="/dashboard" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                  Dashboard
-                </Link>
-                <SignOutForm />
-              </>
-            ) : (
-              <Link href="/login" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader isLoggedIn={isLoggedIn} />
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
         <div className="mb-8">

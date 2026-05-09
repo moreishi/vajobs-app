@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=file:./prisma/dev.db
+      - NODE_ENV=production
+    volumes:
+      # Persist SQLite database between restarts
+      - db_data:/app/prisma
+    # Set platform for Apple Silicon Macs (optional)
+    # platform: linux/amd64
+
+volumes:
+  db_data:

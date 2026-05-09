@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
-import { SignOutForm } from '@/components/auth/sign-out-form'
 import { cn } from '@/lib/utils'
+import { PublicHeader } from '@/components/layout/public-header'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,36 +44,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="text-xl font-bold tracking-tight">Talent Hub</Link>
-          <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto flex-nowrap">
-            <Link href="/jobs" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Jobs
-            </Link>
-            <Link href="/talents" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-              Talents
-            </Link>
-            {isLoggedIn ? (
-              <>
-                <Link href="/dashboard" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                  Dashboard
-                </Link>
-                <SignOutForm />
-              </>
-            ) : (
-              <>
-                <Link href="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                  Sign in
-                </Link>
-                <Link href="/register" className={buttonVariants({ size: 'sm' })}>
-                  Get Started
-                </Link>
-              </>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader isLoggedIn={isLoggedIn} />
 
       <main>
         {/* Hero */}

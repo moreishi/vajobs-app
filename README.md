@@ -1,6 +1,6 @@
-# Talent Hub
+# VA Jobs Online
 
-A full-featured job marketplace built with Next.js. Talents can browse jobs, apply with connects bidding, and get hired. Clients can post jobs, review applications, schedule interviews, and manage engagements.
+A full-featured virtual assistant job marketplace built with Next.js. Talents can browse jobs, apply with connects bidding, and get hired. Clients can post jobs, review applications, schedule interviews, and manage engagements.
 
 ## Stack
 
@@ -16,6 +16,7 @@ A full-featured job marketplace built with Next.js. Talents can browse jobs, app
 
 - Node.js 20+
 - npm
+- Docker (optional, for containerized deployment)
 
 ## Local Setup
 
@@ -58,7 +59,58 @@ EMAIL_FROM=onboarding@resend.dev
 
 ## Deploy to Production
 
-### Option 1: Vercel (Recommended)
+### Option 1: Docker
+
+The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` for containerized deployment with SQLite.
+
+**Quick start:**
+
+```bash
+# Build and start
+docker compose up -d
+
+# Run migrations (first time only — runs automatically on start)
+docker compose exec app npx prisma migrate deploy
+
+# Seed the database (optional)
+docker compose exec app npx prisma db seed
+
+# View logs
+docker compose logs -f
+```
+
+The container reads environment variables from your `.env` file automatically (via `env_file: .env` in docker-compose.yml). The SQLite database is persisted in a named volume (`db_data`) so data survives restarts.
+
+**Configure via `.env`:**
+
+The app picks up environment variables from `.env` at runtime (Next.js loads `.env` automatically). At minimum, set `AUTH_SECRET`:
+
+```bash
+# Generate a secure secret
+openssl rand -hex 32
+
+# Edit .env and update AUTH_SECRET
+```
+
+**Build and run manually (without compose):**
+
+```bash
+docker build -t talent-hub .
+docker run -p 3000:3000 \
+  -e AUTH_SECRET="your-secret" \
+  -e AUTH_URL="http://localhost:3000" \
+  talent-hub
+```
+
+**Switch to PostgreSQL:**
+
+For production, change `DATABASE_URL` in `.env` to a Postgres connection string. The container works the same way:
+
+```
+DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public"
+```
+
+### Option 2: Vercel (Recommended for Serverless)
 
 ```bash
 # Install Vercel CLI
@@ -91,49 +143,6 @@ Run migrations after deploying the database:
 ```bash
 npx prisma migrate deploy
 npm run seed
-```
-
-### Option 2: Docker
-
-Create a `Dockerfile` in the project root:
-
-```dockerfile
-FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare npm@latest --activate
-
-FROM base AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-
-FROM base AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npm run build
-
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-
-EXPOSE 3000
-CMD ["node", "server.js"]
-```
-
-Build and run:
-
-```bash
-docker build -t talent-hub .
-docker run -p 3000:3000 \
-  -e DATABASE_URL="postgresql://..." \
-  -e AUTH_SECRET="..." \
-  -e AUTH_URL="http://localhost:3000" \
-  talent-hub
 ```
 
 ### Option 3: Traditional VPS
