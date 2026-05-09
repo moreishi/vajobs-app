@@ -26,8 +26,8 @@ git clone <repo-url>
 cd talent-hub
 npm install
 
-# 2. Start PostgreSQL 18
-docker compose up db -d
+# 2. Make sure you have PostgreSQL running (create a database called talent_hub)
+#    Connection string goes in .env.local as DATABASE_URL
 
 # 3. Copy environment variables
 cp .env.example .env.local
@@ -64,15 +64,15 @@ EMAIL_FROM=onboarding@resend.dev
 
 ### Option 1: Docker
 
-The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` (Docker Engine v25+) for containerized deployment with PostgreSQL.
+The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` (Docker Engine v25+). The compose file runs the app as a single service — you provide the PostgreSQL database externally (Coolify managed service, hosted Postgres, etc.).
 
-**Quick start:**
+**Usage:**
 
 ```bash
-# Build and start (Postgres + app)
+# Build and start (app only — provide DATABASE_URL via env)
 docker compose up -d
 
-# Run migrations (runs automatically on first start — this is a manual fallback)
+# Run migrations
 docker compose exec app npx prisma migrate deploy
 
 # Seed the database (optional)
@@ -82,32 +82,12 @@ docker compose exec app npx prisma db seed
 docker compose logs -f
 ```
 
-The compose file spins up two services:
-- **`db`** — PostgreSQL 18 with a named volume (`pg_data`) for data persistence
-- **`app`** — The Next.js app, waits for Postgres health check before starting
+`DATABASE_URL` is required — the compose file uses `${DATABASE_URL:?}` which will error at startup if not set. Pass it via an `.env` file or set it in your deployment dashboard:
 
-All credentials are pulled from your `.env` file using `${VAR:-default}` syntax — edit `.env` to customize:
-
-```bash
-# Edit .env to set your Postgres credentials (or keep the defaults)
-POSTGRES_USER=talent_hub
-POSTGRES_PASSWORD=talent_hub
-POSTGRES_DB=talent_hub
-
-# Generate a secure auth secret
-openssl rand -hex 32
-# Then paste it into .env as AUTH_SECRET
 ```
-
-**Build and run manually (without compose):**
-
-```bash
-docker build -t talent-hub .
-docker run -p 3000:3000 \
-  -e DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public" \
-  -e AUTH_SECRET="your-secret" \
-  -e AUTH_URL="http://localhost:3000" \
-  talent-hub
+DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public"
+AUTH_SECRET="your-secret"
+AUTH_URL="https://your-domain.com"
 ```
 
 ### Option 2: Coolify
@@ -116,16 +96,16 @@ Deploy as a Docker Compose stack on your own server.
 
 **Steps:**
 
-1. Connect your git repository to Coolify
-2. Create a new **Docker Compose** resource
+1. Add a **PostgreSQL** service in Coolify and note the internal connection string
+2. Connect your git repository to Coolify as a new **Docker Compose** resource
 3. Point it at the repository — Coolify reads `docker-compose.yml` automatically
 4. Set environment variables in Coolify's dashboard (do **not** rely on `.env` — Coolify injects them directly):
+   - `DATABASE_URL` — the Postgres connection string from step 1
    - `AUTH_SECRET` — `openssl rand -hex 32`
-   - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` — or keep defaults
    - `AUTH_URL` — your Coolify domain, e.g. `https://app.example.com`
    - `RESEND_API_KEY`, `EMAIL_FROM` — optional, for email
    - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — optional
-5. Deploy — Coolify builds the Docker image, starts Postgres, runs migrations, and serves the app
+5. Deploy — Coolify builds the Docker image and serves the app
 
 The compose file uses `${VAR:-default}` syntax throughout, so Coolify's env injection works seamlessly. The `pg_data` volume persists your database across restarts.
 
