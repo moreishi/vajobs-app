@@ -83,7 +83,7 @@ export default async function DashboardPage() {
   }
 
   // ── Client / Admin dashboard ──
-  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned] = await Promise.all([
+  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned, activeSubscription] = await Promise.all([
     prisma.jobPost.findMany({
       where: { posterId: userId },
       select: { id: true, title: true, status: true, createdAt: true, _count: { select: { applications: true } } },
@@ -143,6 +143,11 @@ export default async function DashboardPage() {
       where: { jobPost: { posterId: userId } },
       _sum: { biddingConnects: true },
     }),
+    prisma.clientSubscription.findFirst({
+      where: { userId, status: 'active' },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    }),
   ])
 
   const activeJobs = jobPosts.filter(j => j.status === 'open').length
@@ -172,6 +177,24 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Subscription status for clients */}
+      {role !== 'admin' && activeSubscription && (
+        <Card className="mb-8">
+          <CardContent className="flex items-center justify-between p-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Membership</p>
+              <p className="font-medium">{activeSubscription.plan.name} Plan</p>
+              <p className="text-xs text-muted-foreground">
+                Renews {new Date(activeSubscription.currentPeriodEnd).toLocaleDateString()}
+              </p>
+            </div>
+            <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+              Manage
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quick Links + Upcoming Interviews */}
       <div className="grid gap-6 md:grid-cols-2 mb-8">
         <Card>
@@ -184,6 +207,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/client-profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit Profile</Link>
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
+            <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Membership</Link>
             {role === 'admin' && (
               <Link href="/dashboard/admin" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Admin Dashboard</Link>
             )}

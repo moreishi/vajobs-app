@@ -34,6 +34,7 @@ export class PayPalProvider implements PaymentProvider {
     const token = await getAccessToken()
 
     const dollarAmount = (params.priceInCents / 100).toFixed(2)
+    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
 
     const res = await fetch(`${API_BASE}/v2/checkout/orders`, {
       method: 'POST',
@@ -49,7 +50,7 @@ export class PayPalProvider implements PaymentProvider {
               currency_code: 'USD',
               value: dollarAmount,
             },
-            description: `${params.connectsAmount} Connects`,
+            description: itemName,
             custom_id: params.orderId,
             invoice_id: params.orderId,
           },

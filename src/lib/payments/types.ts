@@ -1,10 +1,15 @@
 export type ProviderName = 'stripe' | 'paypal' | 'hitpay' | 'xendit' | 'maya'
 
+export type CheckoutType = 'connects' | 'subscription'
+
 export interface CreateCheckoutParams {
-  connectsAmount: number
+  type?: CheckoutType
+  connectsAmount?: number
   priceInCents: number
   userId: string
   orderId: string
+  description?: string
+  planId?: string
   metadata?: Record<string, string>
 }
 

@@ -11,6 +11,7 @@ export class StripeProvider implements PaymentProvider {
 
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
     const stripe = this.getClient()
+    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
@@ -18,8 +19,8 @@ export class StripeProvider implements PaymentProvider {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${params.connectsAmount} Connects`,
-              description: `Purchase ${params.connectsAmount} connects for your VA Jobs Online account`,
+              name: itemName,
+              description: `Purchase ${params.connectsAmount || 0} connects for your VA Jobs Online account`,
             },
             unit_amount: params.priceInCents,
           },

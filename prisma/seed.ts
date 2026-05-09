@@ -60,6 +60,8 @@ async function main() {
   console.log('Seeding database ...\n')
 
   // Delete in dependency order
+  await prisma.clientSubscription.deleteMany()
+  await prisma.subscriptionPlan.deleteMany()
   await prisma.message.deleteMany()
   await prisma.conversation.deleteMany()
   await prisma.interview.deleteMany()
@@ -129,6 +131,38 @@ async function main() {
       },
     })
   }
+  // Seed subscription plans
+  const plans = [
+    { name: 'Monthly', description: 'Billed monthly — full access', durationMonths: 1, priceInCents: 2999, connectsPerPeriod: 30, sortOrder: 1 },
+    { name: 'Quarterly', description: '3 months — save $10', durationMonths: 3, priceInCents: 7999, connectsPerPeriod: 100, sortOrder: 2 },
+    { name: 'Semi-Annual', description: '6 months — save $30', durationMonths: 6, priceInCents: 14999, connectsPerPeriod: 220, sortOrder: 3 },
+    { name: 'Annual', description: '12 months — best value', durationMonths: 12, priceInCents: 24999, connectsPerPeriod: 500, sortOrder: 4 },
+  ]
+
+  for (const p of plans) {
+    await prisma.subscriptionPlan.create({ data: p })
+  }
+  console.log(`  Created ${plans.length} subscription plans`)
+
+  // Give client an active subscription
+  const monthlyPlan = await prisma.subscriptionPlan.findFirstOrThrow({
+    where: { name: 'Monthly' },
+  })
+  const periodStart = new Date()
+  const periodEnd = new Date()
+  periodEnd.setMonth(periodEnd.getMonth() + 1)
+  await prisma.clientSubscription.create({
+    data: {
+      userId: client.id,
+      planId: monthlyPlan.id,
+      status: 'active',
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      autoRenew: true,
+    },
+  })
+  console.log('  Created active subscription for client')
+
   await prisma.paymentSetting.upsert({
     where: { key: 'active_provider' },
     update: { value: 'stripe' },

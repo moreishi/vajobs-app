@@ -502,6 +502,7 @@ export default async function AdminDashboardPage() {
               <Link href="/dashboard/admin/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Jobs</Link>
               <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Applications</Link>
               <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Payment Settings</Link>
+              <Link href="/dashboard/admin/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Subscriptions</Link>
               <Link href="/setup" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Seed Data</Link>
             </CardContent>
           </Card>

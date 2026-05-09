@@ -12,6 +12,7 @@ export class MayaProvider implements PaymentProvider {
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
     const dollarAmount = (params.priceInCents / 100).toFixed(2)
     const publicKey = process.env.MAYA_PUBLIC_KEY!
+    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
 
     const res = await fetch(`${API_BASE}/checkout/v1/checkouts`, {
       method: 'POST',
@@ -26,7 +27,7 @@ export class MayaProvider implements PaymentProvider {
         },
         items: [
           {
-            name: `${params.connectsAmount} Connects`,
+            name: itemName,
             quantity: 1,
             totalAmount: {
               value: dollarAmount,

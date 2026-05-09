@@ -15,6 +15,8 @@ export type NotificationType =
   | 'engagement_ended'
   | 'connects_purchased'
   | 'payment_completed'
+  | 'subscription_cancelled'
+  | 'subscription_renewal'
 
 export async function createNotification({
   userId,

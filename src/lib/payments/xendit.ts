@@ -12,6 +12,7 @@ export class XenditProvider implements PaymentProvider {
   readonly name: ProviderName = 'xendit'
 
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
+    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
     const res = await fetch(`${API_BASE}/v2/invoices`, {
       method: 'POST',
       headers: {
@@ -22,7 +23,7 @@ export class XenditProvider implements PaymentProvider {
         external_id: params.orderId,
         amount: params.priceInCents,
         currency: 'USD',
-        description: `${params.connectsAmount} Connects`,
+        description: itemName,
         success_redirect_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`,
         failure_redirect_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=failed`,
         customer: { user_id: params.userId },

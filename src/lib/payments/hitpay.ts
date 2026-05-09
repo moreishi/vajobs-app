@@ -9,6 +9,7 @@ export class HitPayProvider implements PaymentProvider {
 
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
     const dollarAmount = (params.priceInCents / 100).toFixed(2)
+    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
 
     const res = await fetch(`${API_BASE}/payment-requests`, {
       method: 'POST',
@@ -24,7 +25,7 @@ export class HitPayProvider implements PaymentProvider {
         redirect_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`,
         webhook: `${process.env.AUTH_URL || 'http://localhost:3000'}/api/payments/hitpay/webhook`,
         channel: 'api',
-        purpose: `${params.connectsAmount} Connects`,
+        purpose: itemName,
       }).toString(),
     })
 
