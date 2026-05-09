@@ -5,7 +5,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 ## Stack
 
 - **Framework:** Next.js 16 (App Router, React 19)
-- **Database:** SQLite (dev) / PostgreSQL (production)
+- **Database:** PostgreSQL (via Docker for local dev, managed service in production)
 - **ORM:** Prisma 6
 - **Auth:** NextAuth v5 (credentials + Google OAuth)
 - **Email:** Resend
@@ -16,7 +16,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 
 - Node.js 20+
 - npm
-- Docker (optional, for containerized deployment)
+- Docker (for PostgreSQL 18 and containerized deployment)
 
 ## Local Setup
 
@@ -26,17 +26,20 @@ git clone <repo-url>
 cd talent-hub
 npm install
 
-# 2. Copy environment variables
+# 2. Start PostgreSQL 18
+docker compose up db -d
+
+# 3. Copy environment variables
 cp .env.example .env.local
 # Edit .env.local — at minimum set AUTH_SECRET:
 #   AUTH_SECRET="openssl rand -hex 32"
 
-# 3. Run migrations and seed
+# 4. Run migrations and seed
 npx prisma migrate dev
 # This runs the seed automatically. You can also re-run it later:
 npm run seed
 
-# 4. Start dev server
+# 5. Start dev server
 npm run dev
 ```
 
@@ -80,7 +83,7 @@ docker compose logs -f
 ```
 
 The compose file spins up two services:
-- **`db`** — PostgreSQL 16 with a named volume (`pg_data`) for data persistence
+- **`db`** — PostgreSQL 18 with a named volume (`pg_data`) for data persistence
 - **`app`** — The Next.js app, waits for Postgres health check before starting
 
 All credentials are pulled from your `.env` file using `${VAR:-default}` syntax — edit `.env` to customize:
