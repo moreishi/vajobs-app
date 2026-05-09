@@ -1,6 +1,8 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     env_file:
@@ -11,8 +13,6 @@ services:
     volumes:
       # Persist SQLite database between restarts
       - db_data:/app/prisma
-    # Set platform for Apple Silicon Macs (optional)
-    # platform: linux/amd64
 
 volumes:
   db_data:

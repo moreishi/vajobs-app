@@ -61,7 +61,7 @@ EMAIL_FROM=onboarding@resend.dev
 
 ### Option 1: Docker
 
-The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` for containerized deployment with SQLite.
+The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` (Docker Engine v25+) for containerized deployment with SQLite.
 
 **Quick start:**
 
