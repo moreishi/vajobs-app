@@ -23,7 +23,7 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-talent_hub}:${POSTGRES_PASSWORD:-talent_hub}@db:5432/${POSTGRES_DB:-talent_hub}?schema=public
+      - DATABASE_URL=${DATABASE_URL:-postgresql://talent_hub:talent_hub@db:5432/talent_hub?schema=public}
       - NODE_ENV=production
       - AUTH_URL=${AUTH_URL:-http://localhost:3000}
     depends_on:
