@@ -13,6 +13,8 @@ export default function ProfileEditPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isFetching, setIsFetching] = useState(true)
   const [isPublic, setIsPublic] = useState(true)
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null)
+  const [uploadingResume, setUploadingResume] = useState(false)
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -37,6 +39,7 @@ export default function ProfileEditPage() {
           availability: profile.availability,
         })
         setIsPublic(profile.isPublic)
+        setResumeUrl(profile.resumeUrl || null)
       }
       setIsFetching(false)
     }
@@ -156,6 +159,61 @@ export default function ProfileEditPage() {
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <div className="space-y-2">
+            <Label>Resume</Label>
+            <div className="flex items-center gap-3">
+              {resumeUrl ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline hover:text-primary/80"
+                  >
+                    View current resume
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setResumeUrl(null)}
+                    className="text-xs text-destructive hover:underline"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      setUploadingResume(true)
+                      try {
+                        const fd = new FormData()
+                        fd.set('file', file)
+                        const res = await fetch('/api/upload', { method: 'POST', body: fd })
+                        const data = await res.json()
+                        if (res.ok && data.url) {
+                          setResumeUrl(data.url)
+                        }
+                      } catch {
+                        setError('Upload failed')
+                      } finally {
+                        setUploadingResume(false)
+                      }
+                    }}
+                    className="text-sm text-muted-foreground file:mr-2 file:rounded file:border-0 file:bg-muted file:px-2 file:py-1 file:text-xs file:font-medium file:text-foreground"
+                  />
+                  {uploadingResume && <span className="text-sm text-muted-foreground">Uploading...</span>}
+                </>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Accepted: PDF, DOC, DOCX</p>
+          </div>
+
+          <input type="hidden" name="resumeUrl" value={resumeUrl || ''} />
 
           <div className="flex gap-2">
             <Button type="submit" disabled={isLoading}>

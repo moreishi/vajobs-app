@@ -8,8 +8,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
 import { StatusUpdateForm } from '@/components/applications/status-update-form'
 import { WithdrawButton } from '@/components/applications/withdraw-button'
-import { MessageBubble } from '@/components/messages/message-bubble'
-import { MessageForm } from '@/components/messages/message-form'
+import { ChatMessages } from '@/components/chat/chat-messages'
 import { InterviewDetails } from '@/components/interviews/interview-details'
 import { InterviewForm } from '@/components/interviews/interview-form'
 import { ReviewForm } from '@/components/reviews/review-form'
@@ -108,24 +107,12 @@ export default async function ApplicationDetailPage({
             <CardHeader>
               <CardTitle className="text-base">Messages</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {application.conversation && application.conversation.messages && application.conversation.messages.length > 0 ? (
-                <div className="space-y-3">
-                  {application.conversation.messages.map((message) => (
-                    <MessageBubble
-                      key={message.id}
-                      message={message}
-                      isOwn={message.senderId === session.user.id}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-sm text-muted-foreground">
-                  No messages yet. Send a message below.
-                </p>
-              )}
-
-              <MessageForm applicationId={application.id} />
+            <CardContent>
+              <ChatMessages
+                applicationId={application.id}
+                currentUserId={session.user.id}
+                initialMessages={application.conversation?.messages || []}
+              />
             </CardContent>
           </Card>
 

@@ -79,16 +79,33 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
                 {profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-bold">{profile.user.name || profile.user.email}</h1>
-                {profile.headline && (
-                  <p className="mt-1 text-lg text-muted-foreground">{profile.headline}</p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                  {profile.hourlyRate && <span>${profile.hourlyRate}/hr</span>}
-                  {profile.experience && <span>{profile.experience} years experience</span>}
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${availabilityColor}`}>
-                    {profile.availability}
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl font-bold">{profile.user.name || profile.user.email}</h1>
+                    {profile.headline && (
+                      <p className="mt-1 text-lg text-muted-foreground">{profile.headline}</p>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                      {profile.hourlyRate && <span>${profile.hourlyRate}/hr</span>}
+                      {profile.experience && <span>{profile.experience} years experience</span>}
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${availabilityColor}`}>
+                        {profile.availability}
+                      </span>
+                    </div>
+                  </div>
+                  {profile.resumeUrl && (
+                    <a
+                      href={profile.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                    >
+                      <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                      Download Resume
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

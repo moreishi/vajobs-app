@@ -303,12 +303,12 @@ describe('sendMessage', () => {
     expect(result).toEqual({ error: 'Not authenticated' })
   })
 
-  it('returns error on empty content', async () => {
+  it('returns error on empty content and no attachment', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id' } } as any)
     const formData = new FormData()
     formData.set('content', '  ')
     const result = await sendMessage('app-id', formData)
-    expect(result).toEqual({ error: 'Message cannot be empty' })
+    expect(result).toEqual({ error: 'Message or attachment is required' })
   })
 
   it('returns error when application not found', async () => {
@@ -350,7 +350,10 @@ describe('sendMessage', () => {
       conversationId: 'conv-id',
       senderId: 'talent-id',
       content: 'Hello!',
+      attachmentUrl: null,
+      attachmentName: null,
       createdAt: new Date(),
+      sender: { id: 'talent-id', name: null, email: 'talent@example.com' },
     })
 
     const formData = new FormData()
@@ -359,9 +362,12 @@ describe('sendMessage', () => {
 
     expect(prisma.conversation.create).toHaveBeenCalledWith({ data: { applicationId: 'app-id' } })
     expect(prisma.message.create).toHaveBeenCalledWith({
-      data: { conversationId: 'conv-id', senderId: 'talent-id', content: 'Hello!' },
+      data: { conversationId: 'conv-id', senderId: 'talent-id', content: 'Hello!', attachmentUrl: null, attachmentName: null },
+      include: { sender: { select: { id: true, name: true, email: true } } },
     })
-    expect(result).toEqual({ success: true })
+    expect(result).toHaveProperty('success', true)
+    expect(result).toHaveProperty('message')
+    expect((result as any).message.content).toBe('Hello!')
   })
 
   it('sends message to existing conversation', async () => {
@@ -381,7 +387,10 @@ describe('sendMessage', () => {
       conversationId: 'conv-id',
       senderId: 'client-id',
       content: 'Thanks for applying!',
+      attachmentUrl: null,
+      attachmentName: null,
       createdAt: new Date(),
+      sender: { id: 'client-id', name: 'Client', email: 'client@example.com' },
     })
 
     const formData = new FormData()
@@ -390,9 +399,80 @@ describe('sendMessage', () => {
 
     expect(prisma.conversation.create).not.toHaveBeenCalled()
     expect(prisma.message.create).toHaveBeenCalledWith({
-      data: { conversationId: 'conv-id', senderId: 'client-id', content: 'Thanks for applying!' },
+      data: { conversationId: 'conv-id', senderId: 'client-id', content: 'Thanks for applying!', attachmentUrl: null, attachmentName: null },
+      include: { sender: { select: { id: true, name: true, email: true } } },
     })
-    expect(result).toEqual({ success: true })
+    expect(result).toHaveProperty('success', true)
+  })
+
+  it('sends message with file attachment', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id' } } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
+      ...mockApplication,
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
+    })
+    vi.mocked(prisma.conversation.findUnique).mockResolvedValueOnce({
+      id: 'conv-id',
+      applicationId: 'app-id',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    vi.mocked(prisma.message.create).mockResolvedValueOnce({
+      id: 'msg-id',
+      conversationId: 'conv-id',
+      senderId: 'talent-id',
+      content: 'Here is my resume',
+      attachmentUrl: '/uploads/resume.pdf',
+      attachmentName: 'resume.pdf',
+      createdAt: new Date(),
+      sender: { id: 'talent-id', name: null, email: 'talent@example.com' },
+    })
+
+    const formData = new FormData()
+    formData.set('content', 'Here is my resume')
+    formData.set('attachmentUrl', '/uploads/resume.pdf')
+    formData.set('attachmentName', 'resume.pdf')
+    const result = await sendMessage('app-id', formData)
+
+    expect(prisma.message.create).toHaveBeenCalledWith({
+      data: { conversationId: 'conv-id', senderId: 'talent-id', content: 'Here is my resume', attachmentUrl: '/uploads/resume.pdf', attachmentName: 'resume.pdf' },
+      include: { sender: { select: { id: true, name: true, email: true } } },
+    })
+    expect(result).toHaveProperty('success', true)
+    expect((result as any).message.attachmentUrl).toBe('/uploads/resume.pdf')
+  })
+
+  it('sends attachment-only message without content', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id' } } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce({
+      ...mockApplication,
+      jobPost: { posterId: 'client-id', title: 'Test Job' },
+    })
+    vi.mocked(prisma.conversation.findUnique).mockResolvedValueOnce({
+      id: 'conv-id',
+      applicationId: 'app-id',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    vi.mocked(prisma.message.create).mockResolvedValueOnce({
+      id: 'msg-id',
+      conversationId: 'conv-id',
+      senderId: 'talent-id',
+      content: '',
+      attachmentUrl: '/uploads/doc.pdf',
+      attachmentName: 'doc.pdf',
+      createdAt: new Date(),
+      sender: { id: 'talent-id', name: null, email: 'talent@example.com' },
+    })
+
+    const formData = new FormData()
+    formData.set('attachmentUrl', '/uploads/doc.pdf')
+    formData.set('attachmentName', 'doc.pdf')
+    const result = await sendMessage('app-id', formData)
+
+    expect(result).toHaveProperty('success', true)
+    expect((result as any).message.attachmentUrl).toBe('/uploads/doc.pdf')
+    expect((result as any).message.content).toBe('')
   })
 })
 

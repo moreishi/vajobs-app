@@ -179,8 +179,11 @@ export async function sendMessage(applicationId: string, formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Not authenticated' }
 
-  const content = (formData.get('content') as string)?.trim()
-  if (!content) return { error: 'Message cannot be empty' }
+  const content = (formData.get('content') as string)?.trim() || ''
+  const attachmentUrl = (formData.get('attachmentUrl') as string)?.trim() || null
+  const attachmentName = (formData.get('attachmentName') as string)?.trim() || null
+
+  if (!content && !attachmentUrl) return { error: 'Message or attachment is required' }
 
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
@@ -197,12 +200,15 @@ export async function sendMessage(applicationId: string, formData: FormData) {
     conversation = await prisma.conversation.create({ data: { applicationId } })
   }
 
-  await prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       conversationId: conversation.id,
       senderId: session.user.id,
       content,
+      attachmentUrl,
+      attachmentName,
     },
+    include: { sender: { select: { id: true, name: true, email: true } } },
   })
 
   const otherUserId = isApplicant ? application.jobPost.posterId : application.applicantId
@@ -215,7 +221,13 @@ export async function sendMessage(applicationId: string, formData: FormData) {
   })
 
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))
-  return { success: true as const }
+  return {
+    success: true as const,
+    message: {
+      ...message,
+      createdAt: message.createdAt.toISOString(),
+    },
+  }
 }
 
 export async function scheduleInterview(applicationId: string, formData: FormData) {

@@ -19,6 +19,7 @@ export async function updateProfile(formData: FormData) {
   const experience = parseInt(formData.get('experience') as string) || null
   const availability = (formData.get('availability') as string) || 'available'
   const isPublic = formData.get('isPublic') === 'on'
+  const resumeUrl = (formData.get('resumeUrl') as string)?.trim() || null
 
   const skills = skillsRaw
     ? skillsRaw.split(',').map((s) => s.trim()).filter(Boolean)
@@ -40,6 +41,7 @@ export async function updateProfile(formData: FormData) {
       experience,
       availability,
       isPublic,
+      resumeUrl,
     },
     update: {
       headline,
@@ -49,6 +51,7 @@ export async function updateProfile(formData: FormData) {
       experience,
       availability,
       isPublic,
+      resumeUrl,
     },
   })
 

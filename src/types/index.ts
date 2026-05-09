@@ -70,6 +70,8 @@ export type Message = {
   conversationId: string
   senderId: string
   content: string
+  attachmentUrl: string | null
+  attachmentName: string | null
   createdAt: string
   sender?: {
     id: string
@@ -102,6 +104,7 @@ export type Profile = {
   experience: number | null
   availability: Availability
   isPublic: boolean
+  resumeUrl: string | null
   createdAt: string
   updatedAt: string
   user?: {

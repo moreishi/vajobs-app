@@ -37,6 +37,7 @@ const mockProfile = {
   experience: 5,
   availability: 'available',
   isPublic: true,
+  resumeUrl: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 }
@@ -91,6 +92,7 @@ describe('updateProfile', () => {
         experience: 5,
         availability: 'available',
         isPublic: true,
+        resumeUrl: null,
       },
       update: {
         headline: 'Senior React Developer',
@@ -100,10 +102,28 @@ describe('updateProfile', () => {
         experience: 5,
         availability: 'available',
         isPublic: true,
+        resumeUrl: null,
       },
     })
     const { redirect } = await import('next/navigation')
     expect(redirect).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('handles resumeUrl field', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.profile.upsert).mockResolvedValueOnce(mockProfile as any)
+
+    const formData = new FormData()
+    formData.set('resumeUrl', '/uploads/resume.pdf')
+
+    await updateProfile(formData)
+
+    expect(prisma.profile.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ resumeUrl: '/uploads/resume.pdf' }),
+        update: expect.objectContaining({ resumeUrl: '/uploads/resume.pdf' }),
+      })
+    )
   })
 
   it('returns error for invalid availability', async () => {
