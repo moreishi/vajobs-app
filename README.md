@@ -61,15 +61,15 @@ EMAIL_FROM=onboarding@resend.dev
 
 ### Option 1: Docker
 
-The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` (Docker Engine v25+) for containerized deployment with SQLite.
+The project includes a `Dockerfile`, `.dockerignore`, and `docker-compose.yml` (Docker Engine v25+) for containerized deployment with PostgreSQL.
 
 **Quick start:**
 
 ```bash
-# Build and start
+# Build and start (Postgres + app)
 docker compose up -d
 
-# Run migrations (first time only — runs automatically on start)
+# Run migrations (runs automatically on first start — this is a manual fallback)
 docker compose exec app npx prisma migrate deploy
 
 # Seed the database (optional)
@@ -79,11 +79,11 @@ docker compose exec app npx prisma db seed
 docker compose logs -f
 ```
 
-The container reads environment variables from your `.env` file automatically (via `env_file: .env` in docker-compose.yml). The SQLite database is persisted in a named volume (`db_data`) so data survives restarts.
+The compose file spins up two services:
+- **`db`** — PostgreSQL 16 with a named volume (`pg_data`) for data persistence
+- **`app`** — The Next.js app, waits for Postgres health check before starting
 
-**Configure via `.env`:**
-
-The app picks up environment variables from `.env` at runtime (Next.js loads `.env` automatically). At minimum, set `AUTH_SECRET`:
+The app reads extra environment variables from your `.env` file (via `env_file`), but `DATABASE_URL` and `AUTH_URL` are set in compose to point at the Postgres container. At minimum, set `AUTH_SECRET` in `.env`:
 
 ```bash
 # Generate a secure secret
@@ -97,17 +97,10 @@ openssl rand -hex 32
 ```bash
 docker build -t talent-hub .
 docker run -p 3000:3000 \
+  -e DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public" \
   -e AUTH_SECRET="your-secret" \
   -e AUTH_URL="http://localhost:3000" \
   talent-hub
-```
-
-**Switch to PostgreSQL:**
-
-For production, change `DATABASE_URL` in `.env` to a Postgres connection string. The container works the same way:
-
-```
-DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public"
 ```
 
 ### Option 2: Vercel (Recommended for Serverless)

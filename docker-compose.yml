@@ -1,4 +1,21 @@
 services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: talent_hub
+      POSTGRES_PASSWORD: talent_hub
+      POSTGRES_DB: talent_hub
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U talent_hub -d talent_hub
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build:
       context: .
@@ -8,11 +25,12 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=file:./prisma/dev.db
+      - DATABASE_URL=postgresql://talent_hub:talent_hub@db:5432/talent_hub?schema=public
       - NODE_ENV=production
-    volumes:
-      # Persist SQLite database between restarts
-      - db_data:/app/prisma
+      - AUTH_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  db_data:
+  pg_data:

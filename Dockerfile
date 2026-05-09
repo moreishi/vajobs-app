@@ -34,5 +34,9 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3000
 
-# Run migrations, seed, then start
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run seed 2>/dev/null; node server.js"]
+# Run migrations, then start
+CMD ["sh", "-c", "\
+  until npx prisma migrate deploy 2>/dev/null; do \
+    echo 'Waiting for database...'; sleep 2; \
+  done; \
+  node server.js"]
