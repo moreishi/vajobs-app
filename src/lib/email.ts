@@ -1,6 +1,3 @@
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@vajobs.online'
-
 type EmailPayload = {
   to: string
   subject: string
@@ -8,17 +5,19 @@ type EmailPayload = {
 }
 
 export async function sendEmail({ to, subject, html }: EmailPayload) {
-  if (!RESEND_API_KEY) return
+  const apiKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.EMAIL_FROM || 'noreply@vajobs.online'
+  if (!apiKey) return
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: `Talent Hub <${FROM_EMAIL}>`,
+        from: `Talent Hub <${fromEmail}>`,
         to,
         subject,
         html,

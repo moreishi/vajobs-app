@@ -1,7 +1,8 @@
 'use client'
 
 import { useActionState } from 'react'
-import { purchaseConnects, CONNECT_PACKAGES } from '@/actions/connects'
+import { purchaseConnects } from '@/actions/connects'
+import { CONNECT_PACKAGES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 
 export function PurchaseForm() {

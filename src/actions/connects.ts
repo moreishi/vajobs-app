@@ -3,14 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { ROUTES } from '@/lib/constants'
-
-const CONNECT_PACKAGES = [
-  { amount: 10, price: 5 },
-  { amount: 25, price: 10 },
-  { amount: 50, price: 18 },
-  { amount: 100, price: 30 },
-] as const
+import { ROUTES, CONNECT_PACKAGES } from '@/lib/constants'
 
 export async function purchaseConnects(_prevState: { error?: string; success?: boolean } | undefined, formData: FormData) {
   const session = await auth()
@@ -56,5 +49,3 @@ export async function getConnectHistory(page = 1, pageSize = 20) {
 
   return { transactions, total }
 }
-
-export { CONNECT_PACKAGES }

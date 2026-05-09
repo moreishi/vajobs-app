@@ -1,3 +1,10 @@
+export const CONNECT_PACKAGES = [
+  { amount: 10, price: 5 },
+  { amount: 25, price: 10 },
+  { amount: 50, price: 18 },
+  { amount: 100, price: 30 },
+] as const
+
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
