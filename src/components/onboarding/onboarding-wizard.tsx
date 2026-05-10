@@ -8,14 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { COMMON_SKILLS } from '@/lib/constants'
 import { CheckIcon } from 'lucide-react'
-
-const COMMON_SKILLS = [
-  'Administrative Support', 'Customer Service', 'Data Entry', 'Social Media Management',
-  'Bookkeeping', 'Email Management', 'Calendar Management', 'Project Management',
-  'Content Writing', 'Graphic Design', 'Video Editing', 'Web Development',
-  'SEO', 'Digital Marketing', 'Sales', 'Lead Generation',
-]
 
 export function TalentOnboarding() {
   const router = useRouter()

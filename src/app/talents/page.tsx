@@ -18,7 +18,7 @@ const PAGE_SIZE = 12
 export default async function TalentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string; skills?: string; availability?: string; page?: string }>
+  searchParams: Promise<{ query?: string; skills?: string; availability?: string; rateMin?: string; rateMax?: string; expMin?: string; expMax?: string; sort?: string; page?: string }>
 }) {
   const session = await auth()
   const isLoggedIn = !!session?.user
@@ -30,6 +30,11 @@ export default async function TalentsPage({
     query: params.query,
     skills: params.skills,
     availability: params.availability,
+    rateMin: params.rateMin,
+    rateMax: params.rateMax,
+    expMin: params.expMin,
+    expMax: params.expMax,
+    sort: params.sort,
     page: currentPage,
     pageSize: PAGE_SIZE,
   })
@@ -40,6 +45,11 @@ export default async function TalentsPage({
   if (params.query) paginationParams.query = params.query
   if (params.skills) paginationParams.skills = params.skills
   if (params.availability) paginationParams.availability = params.availability
+  if (params.rateMin) paginationParams.rateMin = params.rateMin
+  if (params.rateMax) paginationParams.rateMax = params.rateMax
+  if (params.expMin) paginationParams.expMin = params.expMin
+  if (params.expMax) paginationParams.expMax = params.expMax
+  if (params.sort) paginationParams.sort = params.sort
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -58,6 +68,11 @@ export default async function TalentsPage({
             initialQuery={params.query || ''}
             initialSkills={params.skills || ''}
             initialAvailability={params.availability || ''}
+            initialRateMin={params.rateMin || ''}
+            initialRateMax={params.rateMax || ''}
+            initialExpMin={params.expMin || ''}
+            initialExpMax={params.expMax || ''}
+            initialSort={params.sort || ''}
           />
         </div>
 

@@ -33,3 +33,10 @@ export const ROUTES = {
   SUBSCRIPTIONS: '/dashboard/subscriptions',
   ADMIN_SUBSCRIPTIONS: '/dashboard/admin/subscriptions',
 } as const
+
+export const COMMON_SKILLS = [
+  'Administrative Support', 'Customer Service', 'Data Entry', 'Social Media Management',
+  'Bookkeeping', 'Email Management', 'Calendar Management', 'Project Management',
+  'Content Writing', 'Graphic Design', 'Video Editing', 'Web Development',
+  'SEO', 'Digital Marketing', 'Sales', 'Lead Generation',
+] as const

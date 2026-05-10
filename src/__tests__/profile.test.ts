@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    profile: { findUnique: vi.fn(), findMany: vi.fn(), upsert: vi.fn() },
-    user: { findUnique: vi.fn() },
+    profile: { findUnique: vi.fn(), findMany: vi.fn(), upsert: vi.fn(), count: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn() },
   },
 }))
 
@@ -227,6 +227,7 @@ describe('getProfile', () => {
 
 describe('searchTalents', () => {
   it('returns only public profiles', async () => {
+    vi.mocked(prisma.profile.count).mockResolvedValueOnce(0)
     vi.mocked(prisma.profile.findMany).mockResolvedValueOnce([])
     const result = await searchTalents({})
     expect(prisma.profile.findMany).toHaveBeenCalledWith(
@@ -238,17 +239,12 @@ describe('searchTalents', () => {
   })
 
   it('filters by query in headline', async () => {
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.profile.count).mockResolvedValueOnce(1)
     vi.mocked(prisma.profile.findMany).mockResolvedValueOnce([
       {
         ...mockProfile,
         user: { id: 'talent-id', name: 'Talent', email: 'talent@example.com', image: null },
-      },
-      {
-        ...mockProfile,
-        userId: 'other-id',
-        headline: 'Python Developer',
-        skills: '["Python"]',
-        user: { id: 'other-id', name: 'Other', email: 'other@example.com', image: null },
       },
     ])
 
@@ -259,17 +255,12 @@ describe('searchTalents', () => {
   })
 
   it('filters by skills parameter', async () => {
+    vi.mocked(prisma.profile.count).mockResolvedValueOnce(1)
     vi.mocked(prisma.profile.findMany).mockResolvedValueOnce([
       {
         ...mockProfile,
         skills: '["React","TypeScript"]',
         user: { id: 'talent-id', name: 'Talent', email: 'talent@example.com', image: null },
-      },
-      {
-        ...mockProfile,
-        userId: 'other-id',
-        skills: '["Python"]',
-        user: { id: 'other-id', name: 'Other', email: 'other@example.com', image: null },
       },
     ])
 
@@ -280,6 +271,7 @@ describe('searchTalents', () => {
   })
 
   it('filters by availability', async () => {
+    vi.mocked(prisma.profile.count).mockResolvedValueOnce(0)
     vi.mocked(prisma.profile.findMany).mockResolvedValueOnce([])
 
     await searchTalents({ availability: 'busy' })

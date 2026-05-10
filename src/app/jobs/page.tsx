@@ -19,7 +19,7 @@ const PAGE_SIZE = 12
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string; type?: string; skills?: string; page?: string }>
+  searchParams: Promise<{ query?: string; type?: string; skills?: string; location?: string; sort?: string; page?: string }>
 }) {
   const session = await auth()
   const isLoggedIn = !!session?.user
@@ -49,11 +49,17 @@ export default async function JobsPage({
     }
   }
 
+  if (params.location) {
+    where.location = { contains: params.location, mode: 'insensitive' }
+  }
+
+  const orderBy = params.sort === 'oldest' ? { createdAt: 'asc' as const } : { createdAt: 'desc' as const }
+
   const [total, prismaJobs] = await Promise.all([
     prisma.jobPost.count({ where }),
     prisma.jobPost.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip: (currentPage - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
@@ -81,6 +87,8 @@ export default async function JobsPage({
   if (params.query) paginationParams.query = params.query
   if (params.type) paginationParams.type = params.type
   if (params.skills) paginationParams.skills = params.skills
+  if (params.location) paginationParams.location = params.location
+  if (params.sort) paginationParams.sort = params.sort
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -99,6 +107,8 @@ export default async function JobsPage({
             initialQuery={params.query || ''}
             initialType={params.type || ''}
             initialSkills={params.skills || ''}
+            initialLocation={params.location || ''}
+            initialSort={params.sort || ''}
           />
         </div>
 
