@@ -67,6 +67,13 @@ export default async function AdminDashboardPage() {
     allJobs,
     totalTalents,
     totalClients,
+
+    activeSubs,
+    newSubsLast30,
+    cancelledLast30,
+    subPayments,
+    subsByPlan,
+    endingWithin30d,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.groupBy({ by: ['role'], _count: true }),
@@ -119,6 +126,30 @@ export default async function AdminDashboardPage() {
     }),
     prisma.user.count({ where: { role: 'talent' } }),
     prisma.user.count({ where: { role: 'client' } }),
+
+    // Subscription analytics
+    prisma.clientSubscription.findMany({
+      where: { status: 'active' },
+      include: { plan: true },
+    }),
+    prisma.clientSubscription.count({
+      where: { createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.clientSubscription.count({
+      where: { status: 'cancelled', cancelledAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.paymentOrder.findMany({
+      where: { type: 'subscription', status: 'completed', completedAt: { gte: sixMonthsAgo } },
+      select: { priceInCents: true, completedAt: true, planId: true },
+    }),
+    prisma.clientSubscription.groupBy({
+      by: ['planId'],
+      _count: true,
+      where: { status: 'active' },
+    }),
+    prisma.clientSubscription.count({
+      where: { currentPeriodEnd: { gte: new Date(), lte: thirtyDaysAgo } },
+    }),
   ])
 
   const roleMap: Record<string, number> = {}
@@ -260,6 +291,38 @@ export default async function AdminDashboardPage() {
     ? Math.round(((thisMonthSignups - lastMonthSignups) / lastMonthSignups) * 100)
     : 0
 
+  // ── Subscription analytics ──
+  const mrr = activeSubs.reduce((sum, s) => sum + s.plan.priceInCents, 0)
+  const churnRate = activeSubs.length > 0
+    ? Math.round((cancelledLast30 / (activeSubs.length + cancelledLast30)) * 100)
+    : 0
+
+  // Plan distribution
+  const planDist = subsByPlan.map((g) => {
+    const plan = activeSubs.find((s) => s.planId === g.planId)?.plan
+    return { label: plan?.name ?? 'Unknown', value: g._count }
+  })
+
+  // Monthly subscription revenue (last 6 months)
+  const monthlySubRevenue = last6Months.map((monthStart) => {
+    const nextMonth = new Date(monthStart)
+    nextMonth.setMonth(nextMonth.getMonth() + 1)
+    const amount = subPayments
+      .filter((p) => {
+        const c = new Date(p.completedAt!)
+        return c >= monthStart && c < nextMonth
+      })
+      .reduce((sum, p) => sum + p.priceInCents, 0)
+    return {
+      label: monthStart.toLocaleDateString(undefined, { month: 'short' }),
+      value: Math.round(amount / 100),
+    }
+  })
+
+  const clientsWithSub = activeSubs.length
+  const totalClientsCount = roleMap['client'] ?? 0
+  const subPenetration = totalClientsCount > 0 ? Math.round((clientsWithSub / totalClientsCount) * 100) : 0
+
   return (
     <>
       <div className="mb-8 flex items-center justify-between">
@@ -347,6 +410,45 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
+      {/* Subscription Metrics */}
+      <div className="mb-8">
+        <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Subscriptions</h2>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">MRR</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">${(mrr / 100).toFixed(2)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">monthly recurring revenue</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Subscriptions</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{activeSubs.length}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{subPenetration}% of clients</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">New / Churn (30d)</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">
+                <span className="text-green-600 dark:text-green-400">+{newSubsLast30}</span>
+                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-destructive">-{cancelledLast30}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{churnRate}% churn rate</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">At Risk</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{endingWithin30d}</p>
+              <p className="mt-1 text-xs text-muted-foreground">subscriptions ending within 30d</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* Charts row 1 */}
       <div className="mb-8 grid gap-6 md:grid-cols-2">
         {/* Monthly Signup Trend */}
@@ -375,11 +477,15 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Connects Revenue Trend */}
+        {/* Subscription Revenue Trend */}
         <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Connects Purchased (Monthly)</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm font-medium">Subscription Revenue (Monthly)</CardTitle></CardHeader>
           <CardContent>
-            <LineChart data={monthlyRevenue} height={100} />
+            {monthlySubRevenue.some((d) => d.value > 0) ? (
+              <LineChart data={monthlySubRevenue} height={100} />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">No subscription revenue yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -393,28 +499,15 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Connects Economy */}
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Connects Economy</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-sm text-muted-foreground">Total purchased</span>
-              <span className="font-semibold">{totalConnectsPurchased?._sum.amount ?? 0}</span>
-            </div>
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-sm text-muted-foreground">Total spent on apps</span>
-              <span className="font-semibold">{totalConnectsSpent?._sum.amount ?? 0}</span>
-            </div>
-            <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-sm text-muted-foreground">In circulation</span>
-              <span className="font-semibold">{(totalConnectsAgg._sum.connects ?? 0)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total transactions</span>
-              <span className="font-semibold">{totalTx}</span>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Plan Distribution */}
+        {planDist.length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="text-sm font-medium">Plan Distribution</CardTitle></CardHeader>
+            <CardContent>
+              <PieChart data={planDist} size={120} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Engagement Analytics */}
         <Card>

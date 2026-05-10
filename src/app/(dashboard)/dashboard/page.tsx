@@ -24,6 +24,25 @@ export default async function DashboardPage() {
   const role = (user.role as Role) || 'guest'
   const userId = user.id!
 
+  // Redirect to onboarding if profile not set up
+  if (role === 'talent') {
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+      select: { headline: true, bio: true, skills: true },
+    })
+    if (!profile?.headline || !profile?.bio) {
+      redirect('/dashboard/onboarding')
+    }
+  } else if (role === 'client') {
+    const clientProfile = await prisma.clientProfile.findUnique({
+      where: { userId },
+      select: { company: true },
+    })
+    if (!clientProfile?.company) {
+      redirect('/dashboard/onboarding')
+    }
+  }
+
   if (role === 'talent') {
     const [u, pendingApps, interviews, acceptedApps] = await Promise.all([
       prisma.user.findUnique({
