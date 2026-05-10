@@ -16,20 +16,66 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 
 ## Features
 
-- Job posting & browsing with skill-based search and filtering
-- Proposal system: bidding, timelines, approach
-- Interview scheduling with meeting links
-- Real-time messaging (SSE with polling fallback)
-- Contract management (draft → sign → active → terminated)
-- Milestone tracking (pending → completed → approved/rejected)
-- Invoice generation with Stripe/PayPal/Wise payment buttons
-- Talent directory with search, filters, portfolio, and reviews
-- AI-powered talent matching for job posts
-- Connects system (purchase, bid, monthly grants)
-- Subscription plans (Starter, Growth, Scale)
-- Admin dashboard (users, jobs, payments, email logs)
-- Notification system with preferences
-- Saved searches and alerts
+### For Talents
+| Feature | Description |
+|---------|-------------|
+| **Browse Jobs** | Search, filter by skills/type/location, sort by date/relevance |
+| **AI Job Generator** | Generate job descriptions from a prompt using AI providers (OpenAI, Anthropic, Google, Grok) |
+| **Apply with Proposal** | Submit cover letter, bid amount (fixed or hourly), timeline, and approach |
+| **Edit Proposal** | Revise bid, timeline, and approach after discussing with the client |
+| **Connects Bidding** | Bid 1-10 connects per application to prioritize your proposal |
+| **Real-time Messaging** | Chat with clients via SSE — messages arrive instantly, polls as fallback |
+| **Interview Scheduling** | Accept interview invites with calendar scheduling and meeting links |
+| **Skill Assessments** | Take client-created assessments with timed questions and scoring |
+| **Portfolio** | Showcase work samples on your public talent profile |
+| **Talent Profile** | Public page with skills, bio, experience, hourly rate, availability, resume download |
+| **Reviews & Ratings** | Receive star ratings and reviews from clients after engagements |
+
+### For Clients
+| Feature | Description |
+|---------|-------------|
+| **Post Jobs** | Create job listings with skills, type, salary range, and detailed description |
+| **AI Job Generator** | Auto-generate full job descriptions from a short prompt |
+| **Proposals Board** | Review all applications ranked by bid amount and connects |
+| **Status Management** | Move applications through pending → reviewed → interview → accepted/rejected |
+| **Interview Scheduling** | Schedule interviews with meeting links and duration |
+| **Skill Assessments** | Create custom assessments with questions, pass scores, and time limits |
+| **Contract Management** | Create contracts from accepted proposals — draft → sign → active → terminated |
+| **Milestone Tracking** | Break work into milestones: pending → completed (by talent) → approved/rejected (by you) |
+| **Invoicing** | Send invoices linked to contracts and milestones |
+| **Pay Invoices** | Pay via Stripe, PayPal, or Wise (bank transfer) with one click |
+| **AI Talent Matching** | Rank talents by skill match against your job, with optional AI enrichment |
+| **Saved Searches** | Save talent search filters and get notified when new matches appear |
+
+### For Both
+| Feature | Description |
+|---------|-------------|
+| **Real-time Chat** | Live messaging on every application with connection indicator |
+| **Engagements** | Dedicated workspace per accepted proposal with contract, milestones, invoices |
+| **Notifications** | In-app notifications for all events with per-type preferences |
+| **Talent Directory** | Browse/search talents by skills, availability, rate range, experience |
+
+### For Admins
+| Feature | Description |
+|---------|-------------|
+| **User Management** | View, search, and manage all users; toggle talent verification |
+| **Job Moderation** | Review and manage all job listings |
+| **Payment Logs** | View all payment orders and connect transactions |
+| **Email Logs** | Monitor sent emails with search and filtering |
+| **Subscription Management** | Create/edit plans, view subscriber history |
+| **Connects Grants** | Manually add connects to any user |
+| **Monthly Reset** | Trigger monthly connects grant for all talents |
+
+### Platform Infrastructure
+| Area | Details |
+|------|---------|
+| **Auth** | Credentials + Google OAuth via NextAuth v5, role-based access (guest/talent/client/admin) |
+| **Payment Providers** | Stripe, PayPal, Wise, HitPay, Xendit, Maya — strategy pattern, auto-detection |
+| **Connects Economy** | Purchase packs of 10/25/50/100 connects, earn via subscriptions, spend on applications |
+| **Subscriptions** | Tiered plans (Starter $49/Growth $149/Scale $349) with connects per period, auto-renewal |
+| **Email** | Background worker queue via Resend for all notification types |
+| **Real-time** | Server-Sent Events for live chat with automatic polling fallback and reconnection |
+| **Testing** | 327+ Vitest tests covering actions, auth guards, and business logic |
 
 ## Prerequisites
 
