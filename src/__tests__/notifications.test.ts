@@ -16,14 +16,12 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
-vi.mock('@/lib/email', () => ({
-  sendEmail: vi.fn(),
-  buildEmailHtml: vi.fn(() => '<html></html>'),
+vi.mock('@/lib/email/worker', () => ({
+  enqueueEmail: vi.fn(),
 }))
 
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
-const { sendEmail } = await import('@/lib/email')
 
 let createNotification: typeof import('@/actions/notifications').createNotification
 let getUnreadCount: typeof import('@/actions/notifications').getUnreadCount
@@ -50,7 +48,6 @@ describe('createNotification', () => {
   }
 
   it('creates notification record', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ email: 'test@example.com', name: 'Test' } as any)
     vi.mocked(prisma.notification.create).mockResolvedValueOnce({} as any)
 
     await createNotification(baseParams)
@@ -61,7 +58,6 @@ describe('createNotification', () => {
   })
 
   it('creates notification with link', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ email: 'test@example.com', name: 'Test' } as any)
     vi.mocked(prisma.notification.create).mockResolvedValueOnce({} as any)
 
     await createNotification({ ...baseParams, link: '/dashboard' })
@@ -71,12 +67,20 @@ describe('createNotification', () => {
     })
   })
 
-  it('does not block on email send failure', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ email: 'test@example.com', name: 'Test' } as any)
-    vi.stubEnv('RESEND_API_KEY', 're_abc123')
+  it('enqueues email job to background worker', async () => {
+    const { enqueueEmail } = await import('@/lib/email/worker')
+    vi.mocked(prisma.notification.create).mockResolvedValueOnce({} as any)
 
-    await expect(createNotification(baseParams)).resolves.not.toThrow()
-    vi.unstubAllEnvs()
+    await createNotification(baseParams)
+
+    expect(enqueueEmail).toHaveBeenCalledWith({
+      userId: 'user-id',
+      type: 'application_received',
+      title: 'New Application',
+      body: 'Someone applied to your job',
+      link: undefined,
+      baseUrl: 'http://localhost:3000',
+    })
   })
 })
 
