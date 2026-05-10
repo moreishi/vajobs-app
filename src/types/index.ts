@@ -40,6 +40,10 @@ export type Application = {
   coverLetter: string | null
   status: ApplicationStatus
   biddingConnects: number
+  bidAmount: number | null
+  bidType: string
+  timeline: number | null
+  approach: string | null
   createdAt: string
   updatedAt: string
   jobPost?: {

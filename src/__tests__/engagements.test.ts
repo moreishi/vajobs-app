@@ -60,6 +60,7 @@ const mockEngagementDetail = {
   ...mockEngagement,
   jobPost: { id: 'job-id', title: 'Test Job', description: 'A test job', salaryRange: '$100k', type: 'full-time' },
   application: { id: 'app-id', coverLetter: 'I am a great fit!', review: null },
+  contract: null,
 }
 
 beforeEach(async () => {
@@ -173,6 +174,14 @@ describe('getEngagementById', () => {
         talent: { select: { id: true, name: true, email: true } },
         client: { select: { id: true, name: true, email: true } },
         application: { select: { id: true, coverLetter: true, review: true } },
+        contract: {
+          include: {
+            invoices: { orderBy: { createdAt: 'desc' } },
+            milestones: { orderBy: { createdAt: 'asc' } },
+            client: { select: { id: true, name: true, email: true } },
+            talent: { select: { id: true, name: true, email: true } },
+          },
+        },
       },
     })
     expect(result).not.toBeNull()

@@ -141,6 +141,12 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                     ) : (
                       <div className="flex-1">
                         <ApplyForm jobId={id} connects={userConnects} />
+                        {userConnects < 5 && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Running low on connects.{' '}
+                            <Link href="/dashboard/connects" className="text-primary underline">Buy more</Link>
+                          </p>
+                        )}
                       </div>
                     )
                   ) : (

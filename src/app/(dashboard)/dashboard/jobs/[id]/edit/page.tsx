@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { updateJob, getJob } from '@/actions/jobs'
+import { getAssessments } from '@/actions/assessments'
+import { AssessmentBuilder } from '@/components/assessments/assessment-builder'
+import { AiJobGenerator } from '@/components/jobs/ai-job-generator'
+import { TalentMatchingPanel } from '@/components/jobs/talent-matching-panel'
+import type { AssessmentData } from '@/actions/assessments'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
 
@@ -32,14 +37,27 @@ export default function EditJobPage() {
     skills: '',
     status: 'open',
   })
+  const [assessment, setAssessment] = useState<AssessmentData | undefined>(undefined)
+  const [assessmentLoaded, setAssessmentLoaded] = useState(false)
+
+  function handleAiApply(field: string, value: string) {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
   useEffect(() => {
     async function load() {
-      const job = await getJob(jobId)
+      const [job, assessments] = await Promise.all([
+        getJob(jobId),
+        getAssessments(jobId),
+      ])
       if (!job) {
         router.push('/dashboard')
         return
       }
+      if (assessments.length > 0) {
+        setAssessment(assessments[0])
+      }
+      setAssessmentLoaded(true)
       setFormData({
         title: job.title,
         description: job.description,
@@ -83,7 +101,7 @@ export default function EditJobPage() {
       <Link href="/dashboard" className="mb-6 inline-flex text-sm text-muted-foreground hover:text-foreground">
         &larr; Dashboard
       </Link>
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Edit Job</CardTitle>
@@ -100,7 +118,8 @@ export default function EditJobPage() {
                   name="title"
                   type="text"
                   required
-                  defaultValue={formData.title}
+                  value={formData.title}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
@@ -114,7 +133,8 @@ export default function EditJobPage() {
                   name="description"
                   rows={6}
                   required
-                  defaultValue={formData.description}
+                  value={formData.description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                   className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
@@ -127,7 +147,8 @@ export default function EditJobPage() {
                   id="shortDescription"
                   name="shortDescription"
                   type="text"
-                  defaultValue={formData.shortDescription}
+                  value={formData.shortDescription}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, shortDescription: e.target.value }))}
                   placeholder="A brief summary for the job card (optional)"
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
@@ -175,7 +196,8 @@ export default function EditJobPage() {
                   id="salaryRange"
                   name="salaryRange"
                   type="text"
-                  defaultValue={formData.salaryRange}
+                  value={formData.salaryRange}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, salaryRange: e.target.value }))}
                   placeholder="e.g. $120k - $160k"
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
@@ -189,7 +211,8 @@ export default function EditJobPage() {
                   id="skills"
                   name="skills"
                   type="text"
-                  defaultValue={formData.skills}
+                  value={formData.skills}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, skills: e.target.value }))}
                   placeholder="React, TypeScript, Next.js (comma separated)"
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
@@ -225,6 +248,14 @@ export default function EditJobPage() {
             </form>
           </CardContent>
         </Card>
+
+        <AiJobGenerator onApply={handleAiApply} />
+
+        <TalentMatchingPanel jobPostId={jobId} />
+
+        {assessmentLoaded && (
+          <AssessmentBuilder jobPostId={jobId} existing={assessment} />
+        )}
       </div>
     </>
   )

@@ -1,6 +1,6 @@
 # VA Jobs Online
 
-A full-featured virtual assistant job marketplace built with Next.js. Talents can browse jobs, apply with connects bidding, and get hired. Clients can post jobs, review applications, schedule interviews, manage engagements, and subscribe to tiered plans.
+A full-featured virtual assistant job marketplace built with Next.js. Talents can browse jobs, apply with connects bidding, and get hired. Clients can post jobs, review proposals, schedule interviews, manage contracts/milestones/invoices, and pay via Stripe, PayPal, or Wise.
 
 ## Stack
 
@@ -8,10 +8,28 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 - **Database:** SQLite (dev) / PostgreSQL (production)
 - **ORM:** Prisma 6 (dual schema: dev SQLite + prod PostgreSQL)
 - **Auth:** NextAuth v5 (credentials + Google OAuth)
-- **Payments:** Stripe, PayPal, HitPay, Xendit, Maya (strategy pattern)
+- **Payments:** Stripe, PayPal, Wise (+ HitPay, Xendit, Maya) via strategy pattern
+- **Real-time:** Server-Sent Events (SSE) for live chat, polls as fallback
 - **Email:** Resend via background worker queue
-- **Testing:** Vitest (206+ tests)
+- **Testing:** Vitest (327+ tests)
 - **Styling:** Tailwind CSS 4 + shadcn/ui
+
+## Features
+
+- Job posting & browsing with skill-based search and filtering
+- Proposal system: bidding, timelines, approach
+- Interview scheduling with meeting links
+- Real-time messaging (SSE with polling fallback)
+- Contract management (draft → sign → active → terminated)
+- Milestone tracking (pending → completed → approved/rejected)
+- Invoice generation with Stripe/PayPal/Wise payment buttons
+- Talent directory with search, filters, portfolio, and reviews
+- AI-powered talent matching for job posts
+- Connects system (purchase, bid, monthly grants)
+- Subscription plans (Starter, Growth, Scale)
+- Admin dashboard (users, jobs, payments, email logs)
+- Notification system with preferences
+- Saved searches and alerts
 
 ## Prerequisites
 
@@ -70,7 +88,7 @@ Email sending runs through a background worker queue — the response returns im
 
 ### Optional: Payment Providers
 
-Configure at least one payment provider for connects purchases and subscriptions:
+Configure at least one payment provider for connects purchases, subscriptions, and invoice payments:
 
 ```
 # Stripe
@@ -82,22 +100,24 @@ PAYPAL_CLIENT_ID=...
 PAYPAL_CLIENT_SECRET=...
 PAYPAL_WEBHOOK_ID=...
 
+# Wise (bank transfer - for invoice payments only)
+WISE_API_TOKEN=...
+WISE_PROFILE_ID=...
+WISE_SANDBOX=true
+
 # HitPay
 HITPAY_API_KEY=...
 HITPAY_SALT=...
-HITPAY_WEBHOOK_SIGNATURE_KEY=...
 
 # Xendit
 XENDIT_SECRET_API_KEY=xnd_...
-XENDIT_WEBHOOK_TOKEN=...
 
 # Maya (PayMaya)
 MAYA_SECRET_KEY=sk-...
 MAYA_PUBLIC_KEY=pk-...
-MAYA_WEBHOOK_SECRET=...
 ```
 
-The app auto-detects the first configured provider and uses it for all checkout flows.
+The app auto-detects the first configured provider and uses it for checkout flows.
 
 ### Optional: Subscription Auto-Renewal
 
@@ -182,7 +202,7 @@ Deploy as a Docker Compose stack on your own server.
    - `AUTH_URL` — your Coolify domain
    - `RESEND_API_KEY`, `EMAIL_FROM` — optional, for email
    - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — optional
-   - Up to 5 payment provider credential sets — optional
+   - Payment provider credential sets — optional
 4. Deploy — Coolify builds the Docker image and serves the app
 
 ### Option 3: Vercel (Serverless)
@@ -242,14 +262,14 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `PAYPAL_CLIENT_ID` | No | — | PayPal client ID |
 | `PAYPAL_CLIENT_SECRET` | No | — | PayPal secret |
 | `PAYPAL_WEBHOOK_ID` | No | — | PayPal webhook ID |
+| `WISE_API_TOKEN` | No | — | Wise API bearer token |
+| `WISE_PROFILE_ID` | No | — | Wise profile ID |
+| `WISE_SANDBOX` | No | — | Set to `true` for sandbox mode |
 | `HITPAY_API_KEY` | No | — | HitPay API key |
 | `HITPAY_SALT` | No | — | HitPay salt |
-| `HITPAY_WEBHOOK_SIGNATURE_KEY` | No | — | HitPay webhook key |
 | `XENDIT_SECRET_API_KEY` | No | — | Xendit secret key |
-| `XENDIT_WEBHOOK_TOKEN` | No | — | Xendit webhook verification token |
 | `MAYA_SECRET_KEY` | No | — | Maya (PayMaya) secret key |
 | `MAYA_PUBLIC_KEY` | No | — | Maya public key |
-| `MAYA_WEBHOOK_SECRET` | No | — | Maya webhook secret |
 
 ## Commands
 
@@ -258,7 +278,7 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `npm run dev` | Start dev server (Turbopack) |
 | `npm run build` | Production build |
 | `npm start` | Start production server |
-| `npm test` | Run test suite (Vitest, 206 tests) |
+| `npm test` | Run test suite (Vitest, 327+ tests) |
 | `npm run seed` | Seed database with sample data |
 | `npx prisma migrate dev --schema=prisma/schema.dev.prisma` | Run dev migration |
 | `npx prisma migrate deploy` | Run production migration |

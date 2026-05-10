@@ -11,7 +11,26 @@ export class StripeProvider implements PaymentProvider {
 
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
     const stripe = this.getClient()
-    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
+
+    let itemName: string
+    let successUrl: string
+    let cancelUrl: string
+    let metadata: Record<string, string> = {
+      userId: params.userId,
+      orderId: params.orderId,
+    }
+
+    if (params.type === 'invoice' && params.invoiceId) {
+      itemName = params.description || `Invoice Payment #${params.invoiceId.slice(0, 8)}`
+      successUrl = params.successUrl || `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/engagements`
+      cancelUrl = params.cancelUrl || `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/engagements`
+      metadata.invoiceId = params.invoiceId
+    } else {
+      itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
+      successUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`
+      cancelUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=cancelled`
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
@@ -20,19 +39,15 @@ export class StripeProvider implements PaymentProvider {
             currency: 'usd',
             product_data: {
               name: itemName,
-              description: `Purchase ${params.connectsAmount || 0} connects for your VA Jobs Online account`,
             },
             unit_amount: params.priceInCents,
           },
           quantity: 1,
         },
       ],
-      metadata: {
-        userId: params.userId,
-        orderId: params.orderId,
-      },
-      success_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`,
-      cancel_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=cancelled`,
+      metadata,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     })
 
     return { redirectUrl: session.url!, sessionId: session.id }

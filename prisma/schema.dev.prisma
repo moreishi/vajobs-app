@@ -31,9 +31,14 @@ model User {
   reviewsReceived     Review[]               @relation("Reviewee")
   talentEngagements   Engagement[]           @relation("TalentEngagements")
   clientEngagements   Engagement[]           @relation("ClientEngagements")
+  contractsAsClient   Contract[]             @relation("ContractClient")
+  contractsAsTalent   Contract[]             @relation("ContractTalent")
+  sentInvoices        Invoice[]              @relation("InvoiceSender")
+  receivedInvoices    Invoice[]              @relation("InvoiceRecipient")
   paymentOrders       PaymentOrder[]
   clientSubscriptions ClientSubscription[]
   notificationPreferences NotificationPreference[]
+  savedSearchAlerts       SavedSearchAlert[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -88,8 +93,45 @@ model JobPost {
   applications     Application[]
   savedBy          SavedJob[]
   engagements      Engagement[]
+  assessments      SkillAssessment[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model SkillAssessment {
+  id          String   @id @default(cuid())
+  jobPostId   String
+  clientId    String
+  title       String
+  description String?
+  questions   String   @default("[]")
+  passScore   Int?
+  timeLimit   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobPost  JobPost             @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  attempts AssessmentAttempt[]
+
+  @@index([jobPostId])
+}
+
+model AssessmentAttempt {
+  id            String    @id @default(cuid())
+  assessmentId  String
+  applicantId   String
+  applicationId String    @unique
+  answers       String    @default("[]")
+  score         Int?
+  passed        Boolean?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+
+  assessment  SkillAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  application Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([applicantId])
 }
 
 model Application {
@@ -99,15 +141,20 @@ model Application {
   coverLetter     String?
   status          String   @default("pending")
   biddingConnects Int      @default(1)
+  bidAmount       Float?
+  bidType         String   @default("fixed")
+  timeline        Int?
+  approach        String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  jobPost      JobPost      @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
-  applicant    User         @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  jobPost      JobPost             @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  applicant    User                @relation("Applicant", fields: [applicantId], references: [id], onDelete: Cascade)
   conversation Conversation?
   interview    Interview?
   review       Review?
   engagement   Engagement?
+  assessmentAttempt AssessmentAttempt?
 
   @@unique([jobPostId, applicantId])
   @@index([applicantId])
@@ -163,13 +210,31 @@ model Profile {
   experience   Int?
   availability String   @default("available")
   isPublic     Boolean  @default(true)
+  verified     Boolean  @default(false)
   resumeUrl    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolioItems PortfolioItem[]
 
   @@index([isPublic])
+}
+
+model PortfolioItem {
+  id          String   @id @default(cuid())
+  profileId   String
+  title       String
+  description String?
+  url         String?
+  imageUrl    String?
+  type        String   @default("project")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
 }
 
 model Notification {
@@ -211,6 +276,22 @@ model SavedJob {
   @@index([userId])
 }
 
+model SavedSearchAlert {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   @default("jobs")
+  name       String
+  filters    String   @default("{}")
+  active     Boolean  @default(true)
+  lastMatchedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type, active])
+}
+
 model ConnectTransaction {
   id             String       @id @default(cuid())
   userId         String
@@ -223,6 +304,21 @@ model ConnectTransaction {
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   paymentOrder PaymentOrder? @relation(fields: [paymentOrderId], references: [id])
 
+  @@index([userId])
+}
+
+model EmailLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  email      String
+  type       String
+  subject    String
+  status     String   @default("sent")
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
   @@index([userId])
 }
 
@@ -287,6 +383,7 @@ model PaymentOrder {
   status            String    @default("pending")
   description       String?
   planId            String?
+  invoiceId         String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   completedAt       DateTime?
@@ -295,11 +392,13 @@ model PaymentOrder {
   connectTransaction ConnectTransaction?
   clientSubscription ClientSubscription?
   plan               SubscriptionPlan?   @relation(fields: [planId], references: [id])
+  invoice            Invoice?            @relation(fields: [invoiceId], references: [id])
 
   @@index([userId])
   @@index([providerSessionId])
   @@index([status])
   @@index([type, status])
+  @@index([invoiceId])
 }
 
 model ClientProfile {
@@ -345,8 +444,80 @@ model Engagement {
   talent      User        @relation("TalentEngagements", fields: [talentId], references: [id], onDelete: Cascade)
   client      User        @relation("ClientEngagements", fields: [clientId], references: [id], onDelete: Cascade)
   jobPost     JobPost     @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  contract    Contract?
 
   @@index([talentId])
   @@index([clientId])
   @@index([jobPostId])
+}
+
+model Contract {
+  id            String    @id @default(cuid())
+  engagementId  String    @unique
+  clientId      String
+  talentId      String
+  title         String
+  terms         String
+  rate          Float
+  rateType      String    @default("fixed")
+  startDate     DateTime
+  endDate       DateTime?
+  status        String    @default("draft")
+  signedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  client     User       @relation("ContractClient", fields: [clientId], references: [id], onDelete: Cascade)
+  talent     User       @relation("ContractTalent", fields: [talentId], references: [id], onDelete: Cascade)
+  invoices   Invoice[]
+  milestones Milestone[]
+
+  @@index([clientId])
+  @@index([talentId])
+  @@index([engagementId])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  contractId  String
+  title       String
+  description String?
+  amount      Float
+  dueDate     DateTime?
+  status      String    @default("pending")
+  completedAt DateTime?
+  approvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  contractId    String
+  engagementId  String
+  fromId        String
+  toId          String
+  amount        Float
+  currency      String    @default("USD")
+  description   String?
+  status        String    @default("pending")
+  dueDate       DateTime?
+  paidAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  contract      Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  sender        User            @relation("InvoiceSender", fields: [fromId], references: [id], onDelete: Cascade)
+  recipient     User            @relation("InvoiceRecipient", fields: [toId], references: [id], onDelete: Cascade)
+  paymentOrders PaymentOrder[]
+
+  @@index([contractId])
+  @@index([fromId])
+  @@index([toId])
+  @@index([status])
 }

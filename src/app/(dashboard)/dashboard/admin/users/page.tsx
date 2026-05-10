@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { UserRoleSelect } from '@/components/admin/user-role-select'
+import { VerifyToggle } from '@/components/admin/verify-toggle'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,7 @@ export default async function AdminUsersPage() {
       role: true,
       connects: true,
       createdAt: true,
+      profile: { select: { verified: true } },
       _count: { select: { jobPosts: true, applications: true } },
     },
   })
@@ -37,20 +39,28 @@ export default async function AdminUsersPage() {
         <CardContent>
           <div className="overflow-x-auto">
             <div className="min-w-[500px] divide-y">
-              <div className="grid grid-cols-6 gap-4 py-2 text-xs font-medium text-muted-foreground">
+              <div className="grid grid-cols-7 gap-4 py-2 text-xs font-medium text-muted-foreground">
               <span className="col-span-2">User</span>
               <span>Role</span>
+              <span>Verified</span>
               <span>Connects</span>
               <span>Jobs</span>
               <span>Apps</span>
             </div>
             {users.map((u) => (
-              <div key={u.id} className="grid grid-cols-6 gap-4 py-3 items-center">
+              <div key={u.id} className="grid grid-cols-7 gap-4 py-3 items-center">
                 <div className="col-span-2 min-w-0">
                   <p className="truncate text-sm font-medium">{u.name || 'Unnamed'}</p>
                   <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                 </div>
                 <div><UserRoleSelect userId={u.id} currentRole={u.role} /></div>
+                <div>
+                  <VerifyToggle
+                    userId={u.id}
+                    verified={u.profile?.verified ?? false}
+                    hasProfile={u.role === 'talent'}
+                  />
+                </div>
                 <div><span className="text-sm">{u.connects}</span></div>
                 <div><span className="text-sm">{u._count.jobPosts}</span></div>
                 <div><span className="text-sm">{u._count.applications}</span></div>

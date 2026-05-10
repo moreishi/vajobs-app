@@ -17,6 +17,16 @@ const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: 
   { type: 'payment_completed', label: 'Payment Completed', description: 'When a payment completes' },
   { type: 'subscription_cancelled', label: 'Subscription Cancelled', description: 'When your subscription is cancelled' },
   { type: 'subscription_renewal', label: 'Subscription Renewal', description: 'When your subscription renews' },
+  { type: 'contract_created', label: 'Contract Created', description: 'When a contract is created for your engagement' },
+  { type: 'contract_signed', label: 'Contract Signed', description: 'When a contract has been signed' },
+  { type: 'contract_terminated', label: 'Contract Terminated', description: 'When a contract is terminated' },
+  { type: 'invoice_received', label: 'Invoice Received', description: 'When you receive a new invoice' },
+  { type: 'invoice_paid', label: 'Invoice Paid', description: 'When an invoice is marked as paid' },
+  { type: 'milestone_created', label: 'Milestone Created', description: 'When a milestone is added to a contract' },
+  { type: 'milestone_completed', label: 'Milestone Completed', description: 'When a milestone is marked complete' },
+  { type: 'milestone_approved', label: 'Milestone Approved', description: 'When the client approves a milestone' },
+  { type: 'milestone_rejected', label: 'Milestone Rejected', description: 'When a milestone needs revisions' },
+  { type: 'proposal_accepted', label: 'Proposal Accepted', description: 'When your proposal is accepted' },
 ]
 
 export type NotificationPreferenceData = {

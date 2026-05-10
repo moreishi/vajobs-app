@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { createJob } from '@/actions/jobs'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { AiJobGenerator } from '@/components/jobs/ai-job-generator'
 
 const JOB_TYPES = [
   { value: 'full-time', label: 'Full Time' },
@@ -17,6 +18,24 @@ const JOB_TYPES = [
 export default function NewJobPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  const titleRef = useRef<HTMLInputElement>(null)
+  const descriptionRef = useRef<HTMLTextAreaElement>(null)
+  const shortDescriptionRef = useRef<HTMLInputElement>(null)
+  const skillsRef = useRef<HTMLInputElement>(null)
+  const salaryRangeRef = useRef<HTMLInputElement>(null)
+
+  function handleAiApply(field: string, value: string) {
+    const map: Record<string, React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>> = {
+      title: titleRef,
+      description: descriptionRef,
+      shortDescription: shortDescriptionRef,
+      skills: skillsRef,
+      salaryRange: salaryRangeRef,
+    }
+    const el = map[field]?.current
+    if (el) el.value = value
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -54,6 +73,7 @@ export default function NewJobPage() {
                     name="title"
                     type="text"
                     required
+                    ref={titleRef}
                     placeholder="e.g. Senior Frontend Developer"
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   />
@@ -68,6 +88,7 @@ export default function NewJobPage() {
                     name="description"
                     rows={6}
                     required
+                    ref={descriptionRef}
                     placeholder="Describe the role, responsibilities, and requirements..."
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   />
@@ -81,6 +102,7 @@ export default function NewJobPage() {
                     id="shortDescription"
                     name="shortDescription"
                     type="text"
+                    ref={shortDescriptionRef}
                     placeholder="A brief summary for the job card (optional)"
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   />
@@ -128,6 +150,7 @@ export default function NewJobPage() {
                     id="salaryRange"
                     name="salaryRange"
                     type="text"
+                    ref={salaryRangeRef}
                     placeholder="e.g. $120k - $160k"
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   />
@@ -141,6 +164,7 @@ export default function NewJobPage() {
                     id="skills"
                     name="skills"
                     type="text"
+                    ref={skillsRef}
                     placeholder="React, TypeScript, Next.js (comma separated)"
                     className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
                   />
@@ -174,6 +198,8 @@ export default function NewJobPage() {
               </form>
             </CardContent>
           </Card>
+
+          <AiJobGenerator onApply={handleAiApply} />
         </div>
     </>
   )

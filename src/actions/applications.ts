@@ -38,6 +38,10 @@ export async function applyToJob(jobId: string, formData: FormData) {
   }
 
   const coverLetter = formData.get('coverLetter') as string | null
+  const bidAmount = parseFloat(formData.get('bidAmount') as string) || null
+  const bidType = (formData.get('bidType') as string) || 'fixed'
+  const timeline = parseInt(formData.get('timeline') as string) || null
+  const approach = (formData.get('approach') as string)?.trim() || null
 
   await prisma.$transaction([
     prisma.application.create({
@@ -46,6 +50,10 @@ export async function applyToJob(jobId: string, formData: FormData) {
         applicantId: session.user.id,
         coverLetter: coverLetter?.trim() || null,
         biddingConnects,
+        bidAmount: bidAmount && bidAmount > 0 ? bidAmount : null,
+        bidType,
+        timeline: timeline && timeline > 0 ? timeline : null,
+        approach,
         conversation: { create: {} },
       },
     }),

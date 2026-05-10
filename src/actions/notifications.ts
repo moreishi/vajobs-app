@@ -17,6 +17,17 @@ export type NotificationType =
   | 'payment_completed'
   | 'subscription_cancelled'
   | 'subscription_renewal'
+  | 'contract_created'
+  | 'contract_signed'
+  | 'contract_terminated'
+  | 'invoice_received'
+  | 'invoice_paid'
+  | 'milestone_created'
+  | 'milestone_completed'
+  | 'milestone_approved'
+  | 'milestone_rejected'
+  | 'proposal_accepted'
+  | 'proposal_updated'
 
 const EMAIL_TEMPLATES: Record<string, string> = {
   application_received: 'A new applicant has applied to your job posting.',

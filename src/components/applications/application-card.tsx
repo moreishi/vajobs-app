@@ -17,9 +17,16 @@ export function ApplicationCard({ application }: { application: Application }) {
             </CardTitle>
             <div className="flex shrink-0 items-center gap-2">
               {isClientView && (
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                  Bid: {application.biddingConnects}
-                </span>
+                <>
+                  {application.bidAmount && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      ${application.bidAmount.toFixed(2)} {application.bidType === 'hourly' ? '/hr' : ''}
+                    </span>
+                  )}
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                    Bid: {application.biddingConnects}
+                  </span>
+                </>
               )}
               <ApplicationStatusBadge status={application.status} />
             </div>

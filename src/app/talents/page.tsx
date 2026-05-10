@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { TalentSearch } from '@/components/talents/talent-search'
+import { SaveSearchButton } from '@/components/saved-searches/save-search-button'
 import { Pagination } from '@/components/pagination'
 import { PublicHeader } from '@/components/layout/public-header'
 import type { Profile, Availability } from '@/types'
@@ -76,6 +77,13 @@ export default async function TalentsPage({
           />
         </div>
 
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-muted-foreground">{total} talent{total !== 1 ? 's' : ''} found</p>
+          {isLoggedIn && (
+            <SaveSearchButton type="talents" searchParams={new URLSearchParams(paginationParams).toString()} />
+          )}
+        </div>
+
         {profiles.length > 0 ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -92,7 +100,15 @@ export default async function TalentsPage({
                           {profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold">{profile.user.name || profile.user.email}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="truncate font-semibold">{profile.user.name || profile.user.email}</p>
+                            {profile.verified && (
+                              <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                <svg className="h-3 w-3 mr-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                Verified
+                              </span>
+                            )}
+                          </div>
                           {profile.headline && (
                             <p className="truncate text-sm text-muted-foreground">{profile.headline}</p>
                           )}

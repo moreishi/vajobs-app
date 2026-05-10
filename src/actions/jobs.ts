@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { checkJobAlerts } from '@/actions/saved-search-alerts'
 
 const JOB_TYPES = ['full-time', 'part-time', 'contract', 'freelance', 'internship'] as const
 
@@ -34,7 +35,7 @@ export async function createJob(formData: FormData) {
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
 
-  await prisma.jobPost.create({
+  const job = await prisma.jobPost.create({
     data: {
       title,
       description,
@@ -48,6 +49,11 @@ export async function createJob(formData: FormData) {
       posterName: user?.name || session.user.email?.split('@')[0] || 'Client',
     },
   })
+
+  // Check saved search alerts for matching jobs
+  if (job.status === 'open') {
+    await checkJobAlerts(job.id, job.title, skills, job.location, job.type)
+  }
 
   redirect(ROUTES.JOBS)
 }

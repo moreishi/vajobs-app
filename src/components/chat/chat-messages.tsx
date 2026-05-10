@@ -18,9 +18,11 @@ export function ChatMessages({
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [newCount, setNewCount] = useState(0)
   const [isAtBottom, setIsAtBottom] = useState(true)
+  const [connected, setConnected] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
   const messagesRef = useRef(messages)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   messagesRef.current = messages
 
@@ -47,9 +49,79 @@ export function ChatMessages({
     if (isAtBottom) scrollToBottom()
   }, [messages, isAtBottom, scrollToBottom])
 
-  // Poll for new messages
+  // Real-time via SSE, fallback to polling
   useEffect(() => {
-    const interval = setInterval(async () => {
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null
+
+    function connectSSE() {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+
+      const latest = messagesRef.current[messagesRef.current.length - 1]
+      const since = latest?.createdAt || ''
+      const url = `/api/chat/${applicationId}/stream${since ? `?since=${encodeURIComponent(since)}` : ''}`
+
+      const es = new EventSource(url)
+      eventSourceRef.current = es
+
+      es.addEventListener('messages', (event) => {
+        try {
+          const newMsgs: Message[] = JSON.parse(event.data)
+          if (newMsgs.length === 0) return
+
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id))
+            const filtered = newMsgs.filter((m) => !existingIds.has(m.id))
+            if (filtered.length === 0) return prev
+
+            if (!isAtBottomRef.current) {
+              setNewCount((c) => c + filtered.length)
+            }
+
+            return [...prev, ...filtered]
+          })
+        } catch {
+          // Ignore parse errors
+        }
+      })
+
+      es.addEventListener('heartbeat', () => {
+        setConnected(true)
+      })
+
+      es.onerror = () => {
+        setConnected(false)
+        es.close()
+        eventSourceRef.current = null
+
+        // Fallback to polling if SSE fails
+        if (!pollInterval) {
+          pollInterval = setInterval(pollMessages, 4000)
+        }
+
+        // Retry SSE after 30s
+        reconnectTimeout = setTimeout(() => {
+          if (pollInterval) {
+            clearInterval(pollInterval)
+            pollInterval = null
+          }
+          connectSSE()
+        }, 30000)
+      }
+
+      es.onopen = () => {
+        setConnected(true)
+        // Clear polling if SSE connected
+        if (pollInterval) {
+          clearInterval(pollInterval)
+          pollInterval = null
+        }
+      }
+    }
+
+    async function pollMessages() {
       const latest = messagesRef.current[messagesRef.current.length - 1]
       const result = await getMessages(applicationId, latest?.createdAt)
 
@@ -66,9 +138,18 @@ export function ChatMessages({
           return [...prev, ...newMsgs]
         })
       }
-    }, 4000)
+    }
 
-    return () => clearInterval(interval)
+    connectSSE()
+
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+      if (pollInterval) clearInterval(pollInterval)
+      if (reconnectTimeout) clearTimeout(reconnectTimeout)
+    }
   }, [applicationId])
 
   function handleMessageSent(message: Message) {
@@ -112,7 +193,15 @@ export function ChatMessages({
         </div>
       )}
 
-      <MessageForm applicationId={applicationId} onMessageSent={handleMessageSent} />
+      <div className="flex items-center gap-2">
+        <MessageForm applicationId={applicationId} onMessageSent={handleMessageSent} />
+        <span
+          className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+            connected ? 'bg-green-500' : 'bg-yellow-400'
+          }`}
+          title={connected ? 'Connected' : 'Reconnecting...'}
+        />
+      </div>
     </div>
   )
 }

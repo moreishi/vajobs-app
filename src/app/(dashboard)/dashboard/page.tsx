@@ -95,6 +95,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Jobs</Link>
+            <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
           </CardContent>
         </Card>
       </>
@@ -227,6 +228,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
             <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Membership</Link>
+            <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
             {role === 'admin' && (
               <Link href="/dashboard/admin" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Admin Dashboard</Link>
             )}

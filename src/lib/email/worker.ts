@@ -49,11 +49,36 @@ async function processJob(job: EmailJob) {
     : undefined
   const unsubscribeUrl = `${job.baseUrl}/dashboard/settings/notifications`
 
-  await sendEmail({
-    to: user.email,
-    subject: `[Talent Hub] ${job.title}`,
-    html: buildEmailHtml(job.body, cta, unsubscribeUrl),
-  })
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: `[Talent Hub] ${job.title}`,
+      html: buildEmailHtml(job.body, cta, unsubscribeUrl),
+    })
+
+    await prisma.emailLog.create({
+      data: {
+        userId: job.userId,
+        email: user.email,
+        type: job.type,
+        subject: job.title,
+        status: 'sent',
+      },
+    })
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+
+    await prisma.emailLog.create({
+      data: {
+        userId: job.userId,
+        email: user.email,
+        type: job.type,
+        subject: job.title,
+        status: 'failed',
+        error: errorMsg,
+      },
+    })
+  }
 }
 
 export function enqueueEmail(job: EmailJob) {

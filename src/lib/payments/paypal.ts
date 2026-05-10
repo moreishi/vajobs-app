@@ -34,7 +34,19 @@ export class PayPalProvider implements PaymentProvider {
     const token = await getAccessToken()
 
     const dollarAmount = (params.priceInCents / 100).toFixed(2)
-    const itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
+    let itemName: string
+    let returnUrl: string
+    let cancelUrl: string
+
+    if (params.type === 'invoice' && params.invoiceId) {
+      itemName = params.description || `Invoice Payment #${params.invoiceId.slice(0, 8)}`
+      returnUrl = params.successUrl || `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/engagements?payment=success`
+      cancelUrl = params.cancelUrl || `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/engagements?payment=cancelled`
+    } else {
+      itemName = params.description || (params.connectsAmount ? `${params.connectsAmount} Connects` : 'Payment')
+      returnUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`
+      cancelUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=cancelled`
+    }
 
     const res = await fetch(`${API_BASE}/v2/checkout/orders`, {
       method: 'POST',
@@ -47,7 +59,7 @@ export class PayPalProvider implements PaymentProvider {
         purchase_units: [
           {
             amount: {
-              currency_code: 'USD',
+              currency_code: params.invoiceCurrency || 'USD',
               value: dollarAmount,
             },
             description: itemName,
@@ -61,8 +73,8 @@ export class PayPalProvider implements PaymentProvider {
               payment_method_preference: 'IMMEDIATE_PAYMENT_REQUIRED',
               landing_page: 'LOGIN',
               user_action: 'PAY_NOW',
-              return_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=success`,
-              cancel_url: `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard/connects?payment=cancelled`,
+              return_url: returnUrl,
+              cancel_url: cancelUrl,
             },
           },
         },

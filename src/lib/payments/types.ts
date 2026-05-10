@@ -1,6 +1,6 @@
-export type ProviderName = 'stripe' | 'paypal' | 'hitpay' | 'xendit' | 'maya'
+export type ProviderName = 'stripe' | 'paypal' | 'hitpay' | 'xendit' | 'maya' | 'wise'
 
-export type CheckoutType = 'connects' | 'subscription'
+export type CheckoutType = 'connects' | 'subscription' | 'invoice'
 
 export interface CreateCheckoutParams {
   type?: CheckoutType
@@ -10,6 +10,11 @@ export interface CreateCheckoutParams {
   orderId: string
   description?: string
   planId?: string
+  invoiceId?: string
+  invoiceAmount?: number
+  invoiceCurrency?: string
+  successUrl?: string
+  cancelUrl?: string
   metadata?: Record<string, string>
 }
 
@@ -37,11 +42,12 @@ export interface PaymentProvider {
   handleWebhook(request: Request): Promise<WebhookResult>
 }
 
-export const PROVIDER_NAMES: ProviderName[] = ['stripe', 'paypal', 'hitpay', 'xendit', 'maya']
+export const PROVIDER_NAMES: ProviderName[] = ['stripe', 'paypal', 'hitpay', 'xendit', 'maya', 'wise']
 export const PROVIDER_LABELS: Record<ProviderName, string> = {
   stripe: 'Stripe',
   paypal: 'PayPal',
   hitpay: 'HitPay',
   xendit: 'Xendit',
   maya: 'Maya',
+  wise: 'Wise',
 }

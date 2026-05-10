@@ -26,6 +26,8 @@ export async function processPaymentCompleted(input: PaymentCompletedInput) {
 
     if (order.type === 'subscription') {
       await handleSubscriptionCompleted(tx, order, input)
+    } else if (order.type === 'invoice') {
+      await handleInvoiceCompleted(tx, order, input)
     } else {
       await handleConnectsCompleted(tx, order, input)
     }
@@ -135,6 +137,15 @@ async function handleSubscriptionCompleted(tx: any, order: any, input: PaymentCo
       data: { role: 'client' },
     })
   }
+}
+
+async function handleInvoiceCompleted(tx: any, order: any, input: PaymentCompletedInput) {
+  if (!order.invoiceId) return
+
+  await tx.invoice.update({
+    where: { id: order.invoiceId },
+    data: { status: 'paid', paidAt: new Date() },
+  })
 }
 
 function capitalize(s: string): string {

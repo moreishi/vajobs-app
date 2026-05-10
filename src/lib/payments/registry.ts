@@ -5,6 +5,7 @@ import { PayPalProvider } from './paypal'
 import { HitPayProvider } from './hitpay'
 import { XenditProvider } from './xendit'
 import { MayaProvider } from './maya'
+import { WiseProvider } from './wise'
 
 const providers: Record<ProviderName, () => PaymentProvider> = {
   stripe: () => new StripeProvider(),
@@ -12,6 +13,7 @@ const providers: Record<ProviderName, () => PaymentProvider> = {
   hitpay: () => new HitPayProvider(),
   xendit: () => new XenditProvider(),
   maya: () => new MayaProvider(),
+  wise: () => new WiseProvider(),
 }
 
 export function getProvider(name: ProviderName): PaymentProvider {
@@ -41,5 +43,7 @@ export function checkProviderConfigured(name: ProviderName): boolean {
       return !!process.env.XENDIT_SECRET_KEY
     case 'maya':
       return !!process.env.MAYA_PUBLIC_KEY && !!process.env.MAYA_SECRET_KEY
+    case 'wise':
+      return !!process.env.WISE_API_TOKEN
   }
 }

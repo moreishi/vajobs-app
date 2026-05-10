@@ -32,6 +32,7 @@ export const ROUTES = {
   ADMIN_PAYMENTS: '/dashboard/admin/payments',
   SUBSCRIPTIONS: '/dashboard/subscriptions',
   ADMIN_SUBSCRIPTIONS: '/dashboard/admin/subscriptions',
+  SAVED_SEARCHES: '/dashboard/saved-searches',
 } as const
 
 export const COMMON_SKILLS = [

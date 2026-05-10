@@ -42,6 +42,14 @@ export async function getEngagementById(id: string) {
       application: {
         select: { id: true, coverLetter: true, review: true },
       },
+      contract: {
+        include: {
+          invoices: { orderBy: { createdAt: 'desc' } },
+          milestones: { orderBy: { createdAt: 'asc' } },
+          client: { select: { id: true, name: true, email: true } },
+          talent: { select: { id: true, name: true, email: true } },
+        },
+      },
     },
   })
 

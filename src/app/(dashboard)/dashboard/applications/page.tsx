@@ -44,6 +44,10 @@ export default async function ApplicationsPage() {
     coverLetter: string | null
     status: string
     biddingConnects: number
+    bidAmount: number | null
+    bidType: string
+    timeline: number | null
+    approach: string | null
     createdAt: Date
     updatedAt: Date
     jobPost: { id: string; title: string; posterId: string; posterName: string | null }
@@ -86,6 +90,10 @@ export default async function ApplicationsPage() {
                 coverLetter: app.coverLetter,
                 status: app.status as any,
                 biddingConnects: app.biddingConnects,
+                bidAmount: app.bidAmount,
+                bidType: app.bidType,
+                timeline: app.timeline,
+                approach: app.approach,
                 createdAt: app.createdAt.toISOString(),
                 updatedAt: app.updatedAt.toISOString(),
                 jobPost: app.jobPost,

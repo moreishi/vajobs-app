@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { updateProfile, getMyProfile } from '@/actions/profile'
+import { getPortfolioItems } from '@/actions/portfolio'
+import { PortfolioManager } from '@/components/portfolio/portfolio-form'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -15,6 +17,7 @@ export default function ProfileEditPage() {
   const [isPublic, setIsPublic] = useState(true)
   const [resumeUrl, setResumeUrl] = useState<string | null>(null)
   const [uploadingResume, setUploadingResume] = useState(false)
+  const [portfolioItems, setPortfolioItems] = useState<any[]>([])
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -45,6 +48,18 @@ export default function ProfileEditPage() {
     }
     load()
   }, [])
+
+  // Load portfolio items after profile is fetched
+  useEffect(() => {
+    async function loadPortfolio() {
+      const profile = await getMyProfile()
+      if (profile) {
+        const items = await getPortfolioItems(profile.userId)
+        setPortfolioItems(items)
+      }
+    }
+    if (!isFetching) loadPortfolio()
+  }, [isFetching])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -224,6 +239,10 @@ export default function ProfileEditPage() {
             </Button>
           </div>
         </form>
+
+        <div className="mt-8 max-w-2xl">
+          <PortfolioManager items={portfolioItems} />
+        </div>
     </>
   )
 }

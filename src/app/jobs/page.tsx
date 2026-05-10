@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { JobCard } from '@/components/jobs/job-card'
 import { JobSearch } from '@/components/jobs/job-search'
+import { SaveSearchButton } from '@/components/saved-searches/save-search-button'
 import { Pagination } from '@/components/pagination'
 import { PublicHeader } from '@/components/layout/public-header'
 import type { JobPost, JobType, JobStatus } from '@/types'
@@ -110,6 +111,13 @@ export default async function JobsPage({
             initialLocation={params.location || ''}
             initialSort={params.sort || ''}
           />
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-muted-foreground">{total} job{total !== 1 ? 's' : ''} found</p>
+          {isLoggedIn && (
+            <SaveSearchButton type="jobs" searchParams={new URLSearchParams(paginationParams).toString()} />
+          )}
         </div>
 
         {jobs.length > 0 ? (

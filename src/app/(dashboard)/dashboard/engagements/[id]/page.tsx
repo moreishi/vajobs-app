@@ -6,6 +6,9 @@ import { getEngagementById } from '@/actions/engagements'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { EndEngagementButton } from '@/components/engagements/end-engagement-button'
+import { ContractSection } from '@/components/contracts/contract-section'
+import { InvoiceSection } from '@/components/invoices/invoice-section'
+import { MilestoneSection } from '@/components/milestones/milestone-section'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +26,10 @@ export default async function EngagementDetailPage({
 
   const isTalent = engagement.talentId === session.user.id
   const isClient = engagement.clientId === session.user.id
+
+  const contract = engagement.contract ?? null
+  const invoices = engagement.contract?.invoices ?? []
+  const milestones = engagement.contract?.milestones ?? []
 
   return (
     <>
@@ -93,6 +100,29 @@ export default async function EngagementDetailPage({
             </div>
           </CardContent>
         </Card>
+
+        <ContractSection
+          engagementId={engagement.id}
+          contract={contract}
+          isClient={isClient}
+          isTalent={isTalent}
+        />
+
+        <MilestoneSection
+          contractId={contract?.id ?? ''}
+          contractActive={contract?.status === 'active'}
+          milestones={milestones}
+          isTalent={isTalent}
+          isClient={isClient}
+        />
+
+        <InvoiceSection
+          engagementId={engagement.id}
+          contractId={contract?.id ?? null}
+          contractActive={contract?.status === 'active'}
+          invoices={invoices}
+          userId={session.user.id}
+        />
 
         <Card>
           <CardContent className="p-6">
