@@ -141,7 +141,7 @@ export async function searchTalents(searchParams: {
     const skillFilters = skills.split(',').map((s) => s.trim()).filter(Boolean)
     if (skillFilters.length > 0) {
       where.AND = skillFilters.map((skill) => ({
-        skills: { contains: skill, mode: 'insensitive' },
+        skills: { contains: skill },
       }))
     }
   }
@@ -157,7 +157,7 @@ export async function searchTalents(searchParams: {
     const orConditions: Record<string, unknown>[] = [
       { headline: { contains: query } },
       { bio: { contains: query } },
-      { skills: { contains: query, mode: 'insensitive' } },
+      { skills: { contains: query } },
     ]
     if (userIds.length > 0) {
       orConditions.push({ userId: { in: userIds } })

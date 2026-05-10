@@ -34,9 +34,9 @@ export default async function JobsPage({
 
   if (params.query) {
     where.OR = [
-      { title: { contains: params.query, mode: 'insensitive' } },
-      { description: { contains: params.query, mode: 'insensitive' } },
-      { shortDescription: { contains: params.query, mode: 'insensitive' } },
+      { title: { contains: params.query } },
+      { description: { contains: params.query } },
+      { shortDescription: { contains: params.query } },
     ]
   }
 
@@ -44,13 +44,13 @@ export default async function JobsPage({
     const skillFilters = params.skills.split(',').map((s) => s.trim()).filter(Boolean)
     if (skillFilters.length > 0) {
       where.AND = skillFilters.map((skill) => ({
-        skills: { contains: skill, mode: 'insensitive' },
+        skills: { contains: skill },
       }))
     }
   }
 
   if (params.location) {
-    where.location = { contains: params.location, mode: 'insensitive' }
+    where.location = { contains: params.location }
   }
 
   const orderBy = params.sort === 'oldest' ? { createdAt: 'asc' as const } : { createdAt: 'desc' as const }

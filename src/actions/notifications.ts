@@ -41,14 +41,42 @@ export async function createNotification({
     select: { email: true, name: true },
   })
   if (user?.email && process.env.RESEND_API_KEY) {
-    const emailBody = body || title
-    const cta = link ? { text: 'View on Talent Hub', url: `${process.env.AUTH_URL || 'http://localhost:3000'}${link}` } : undefined
+    // Check if user has opted out of this notification type
+    const pref = await prisma.notificationPreference.findUnique({
+      where: { userId_type: { userId, type } },
+    })
+    if (pref?.email === false) return
+
+    const emailBody = buildEmailBody(type, title, body)
+    const baseUrl = process.env.AUTH_URL || 'http://localhost:3000'
+    const cta = link ? { text: 'View on Talent Hub', url: `${baseUrl}${link}` } : undefined
+    const unsubscribeUrl = `${baseUrl}/dashboard/settings/notifications`
     sendEmail({
       to: user.email,
       subject: `[Talent Hub] ${title}`,
-      html: buildEmailHtml(emailBody, cta),
+      html: buildEmailHtml(emailBody, cta, unsubscribeUrl),
     })
   }
+}
+
+function buildEmailBody(type: string, title: string, body?: string): string {
+  if (body) return body
+
+  const templates: Record<string, string> = {
+    application_received: 'A new applicant has applied to your job posting.',
+    status_updated: 'The status of your application has been updated.',
+    interview_scheduled: 'An interview has been scheduled. Check the details in your dashboard.',
+    interview_cancelled: 'A scheduled interview has been cancelled.',
+    message_received: 'You have received a new message.',
+    review_received: 'Someone has left a review for you.',
+    engagement_ended: 'An engagement has ended.',
+    connects_purchased: 'Your connects purchase was successful.',
+    payment_completed: 'Your payment has been completed successfully.',
+    subscription_cancelled: 'Your subscription has been cancelled.',
+    subscription_renewal: 'Your subscription has been renewed.',
+  }
+
+  return templates[type] || title
 }
 
 export async function getUnreadCount() {

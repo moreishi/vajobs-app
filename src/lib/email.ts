@@ -33,7 +33,11 @@ export async function sendEmail({ to, subject, html }: EmailPayload) {
   }
 }
 
-export function buildEmailHtml(body: string, cta?: { text: string; url: string }) {
+export function buildEmailHtml(body: string, cta?: { text: string; url: string }, unsubscribeUrl?: string) {
+  const footerUnsubscribe = unsubscribeUrl
+    ? `<a href="${unsubscribeUrl}" style="color:#a1a1aa;text-decoration:underline;font-size:11px">Unsubscribe from these emails</a>`
+    : 'If you no longer wish to receive these emails, you can update your preferences in your account settings.'
+
   return `
     <!DOCTYPE html>
     <html>
@@ -54,7 +58,7 @@ export function buildEmailHtml(body: string, cta?: { text: string; url: string }
                   ${cta ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px"><tr><td style="background-color:#18181b;border-radius:8px;padding:12px 24px;text-align:center"><a href="${cta.url}" style="color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;display:inline-block">${cta.text}</a></td></tr></table>` : ''}
                   <p style="font-size:13px;line-height:1.5;color:#71717a;margin:0">
                     You received this because you have an account on VA Jobs Online.<br>
-                    If you no longer wish to receive these emails, you can update your preferences in your account settings.
+                    ${footerUnsubscribe}
                   </p>
                 </td>
               </tr>

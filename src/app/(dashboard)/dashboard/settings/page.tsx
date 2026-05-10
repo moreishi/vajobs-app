@@ -97,6 +97,14 @@ export default function SettingsPage() {
             </Link>
           </div>
         </form>
+        <div className="mt-6 border-t pt-6">
+          <Link
+            href="/dashboard/settings/notifications"
+            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
+          >
+            Notification Preferences
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )
