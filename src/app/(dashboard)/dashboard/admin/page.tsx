@@ -74,6 +74,10 @@ export default async function AdminDashboardPage() {
     subPayments,
     subsByPlan,
     endingWithin30d,
+
+    invoiceCounts,
+    paidInvoices,
+    pendingInvoices,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.groupBy({ by: ['role'], _count: true }),
@@ -149,6 +153,17 @@ export default async function AdminDashboardPage() {
     }),
     prisma.clientSubscription.count({
       where: { currentPeriodEnd: { gte: new Date(), lte: thirtyDaysAgo } },
+    }),
+
+    // Invoice analytics
+    prisma.invoice.groupBy({ by: ['status'], _count: true }),
+    prisma.invoice.findMany({
+      where: { status: 'paid' },
+      select: { amount: true, paidAt: true },
+    }),
+    prisma.invoice.findMany({
+      where: { status: 'pending' },
+      select: { amount: true, dueDate: true },
     }),
   ])
 
@@ -323,6 +338,21 @@ export default async function AdminDashboardPage() {
   const totalClientsCount = roleMap['client'] ?? 0
   const subPenetration = totalClientsCount > 0 ? Math.round((clientsWithSub / totalClientsCount) * 100) : 0
 
+  // ── Invoice analytics ──
+  const invStatusMap: Record<string, number> = {}
+  for (const s of invoiceCounts) invStatusMap[s.status] = s._count
+  const totalInvoiceRevenue = paidInvoices.reduce((sum, inv) => sum + inv.amount, 0)
+  const pendingInvoiceTotal = pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0)
+  const totalInvoices = invoiceCounts.reduce((sum, s) => sum + s._count, 0)
+
+  // ── Conversion funnel ──
+  const funnelSteps = [
+    { label: 'Applications', value: totalApps },
+    { label: 'Interview', value: appStatusMap['interview'] ?? 0 },
+    { label: 'Accepted', value: appStatusMap['accepted'] ?? 0 },
+    { label: 'Engaged', value: engagements.length },
+  ]
+
   return (
     <>
       <div className="mb-8 flex items-center justify-between">
@@ -449,6 +479,41 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Invoices */}
+      {totalInvoices > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Invoices</h2>
+          <div className="grid gap-4 sm:grid-cols-4">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{totalInvoices}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Paid</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{invStatusMap['paid'] ?? 0}</p>
+                <p className="mt-1 text-xs text-muted-foreground">${totalInvoiceRevenue.toFixed(2)} total</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{invStatusMap['pending'] ?? 0}</p>
+                <p className="mt-1 text-xs text-muted-foreground">${pendingInvoiceTotal.toFixed(2)} due</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{invStatusMap['overdue'] ?? 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Charts row 1 */}
       <div className="mb-8 grid gap-6 md:grid-cols-2">
         {/* Monthly Signup Trend */}
@@ -469,11 +534,38 @@ export default async function AdminDashboardPage() {
       </div>
 
       <div className="mb-8 grid gap-6 md:grid-cols-2">
-        {/* Daily Applications */}
+        {/* Conversion Funnel */}
         <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Applications (Last 14 Days)</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-sm font-medium">Conversion Funnel</CardTitle></CardHeader>
           <CardContent>
-            <BarChart data={dailyApps} height={100} />
+            <div className="space-y-3">
+              {funnelSteps.map((step, i) => {
+                const prev = funnelSteps[i - 1]?.value ?? step.value
+                const width = step.value > 0 ? (step.value / funnelSteps[0].value) * 100 : 0
+                const drop = i > 0 && prev > 0
+                  ? Math.round((1 - step.value / prev) * 100)
+                  : null
+                return (
+                  <div key={step.label}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{step.label}</span>
+                      <span className="font-medium tabular-nums">{step.value}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-primary transition-all"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                    {drop !== null && (
+                      <p className="mt-0.5 text-right text-xs text-destructive">
+                        -{drop}% drop
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           </CardContent>
         </Card>
 

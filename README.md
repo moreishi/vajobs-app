@@ -11,7 +11,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 - **Payments:** Stripe, PayPal, Wise (+ HitPay, Xendit, Maya) via strategy pattern
 - **Real-time:** Server-Sent Events (SSE) for live chat, polls as fallback
 - **Email:** Resend via background worker queue
-- **Testing:** Vitest (327+ tests)
+- **Testing:** Vitest (327+ unit tests) + Playwright (E2E)
 - **Styling:** Tailwind CSS 4 + shadcn/ui
 
 ## Features
@@ -58,6 +58,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 ### For Admins
 | Feature | Description |
 |---------|-------------|
+| **Analytics Dashboard** | Revenue, user growth, subscriptions, invoices, conversion funnel, and top skills with charts |
 | **User Management** | View, search, and manage all users; toggle talent verification |
 | **Job Moderation** | Review and manage all job listings |
 | **Payment Logs** | View all payment orders and connect transactions |
@@ -324,7 +325,8 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `npm run dev` | Start dev server (Turbopack) |
 | `npm run build` | Production build |
 | `npm start` | Start production server |
-| `npm test` | Run test suite (Vitest, 327+ tests) |
+| `npm test` | Run unit test suite (Vitest, 327+ tests) |
+| `npm run test:e2e` | Run E2E tests (Playwright) — starts dev server automatically |
 | `npm run seed` | Seed database with sample data |
 | `npx prisma migrate dev --schema=prisma/schema.dev.prisma` | Run dev migration |
 | `npx prisma migrate deploy` | Run production migration |
