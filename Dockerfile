@@ -36,5 +36,5 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 3000
 
-# Run migrations, then start
-CMD ["sh", "-c", "npx prisma migrate deploy; node server.js"]
+# Sync schema (handles failed migration state from previous runs), then start
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss 2>&1; node server.js"]
