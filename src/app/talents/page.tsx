@@ -2,9 +2,11 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { Card, CardContent } from '@/components/ui/card'
 import { TalentSearch } from '@/components/talents/talent-search'
+import { TalentBadge } from '@/components/talents/talent-badge'
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button'
 import { Pagination } from '@/components/pagination'
 import { PublicHeader } from '@/components/layout/public-header'
+import { computeBadges } from '@/lib/badges'
 import type { Profile, Availability } from '@/types'
 
 export const metadata = {
@@ -87,73 +89,83 @@ export default async function TalentsPage({
         {profiles.length > 0 ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {profiles.map((profile: any) => (
-                <Link
-                  key={profile.id}
-                  href={`/talents/${profile.userId}`}
-                  className="block transition-all hover:opacity-80"
-                >
-                  <Card className="h-full">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                          {profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()}
+              {profiles.map((profile: any) => {
+                const badges = computeBadges(profile)
+                return (
+                  <Link
+                    key={profile.id}
+                    href={`/talents/${profile.userId}`}
+                    className="block transition-all hover:opacity-80"
+                  >
+                    <Card className="h-full">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                            {profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate font-semibold">{profile.user.name || profile.user.email}</p>
+                              {profile.verified && (
+                                <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                  <svg className="h-3 w-3 mr-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                                  Verified
+                                </span>
+                              )}
+                            </div>
+                            {profile.headline && (
+                              <p className="truncate text-sm text-muted-foreground">{profile.headline}</p>
+                            )}
+                            {badges.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {badges.map((badge) => (
+                                  <TalentBadge key={badge.type} type={badge.type} />
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="truncate font-semibold">{profile.user.name || profile.user.email}</p>
-                            {profile.verified && (
-                              <span className="shrink-0 inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                                <svg className="h-3 w-3 mr-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                                Verified
+
+                        {profile.skills.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {profile.skills.slice(0, 5).map((skill: string) => (
+                              <span
+                                key={skill}
+                                className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {profile.skills.length > 5 && (
+                              <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                +{profile.skills.length - 5}
                               </span>
                             )}
                           </div>
-                          {profile.headline && (
-                            <p className="truncate text-sm text-muted-foreground">{profile.headline}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {profile.skills.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {profile.skills.slice(0, 5).map((skill: string) => (
-                            <span
-                              key={skill}
-                              className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {profile.skills.length > 5 && (
-                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                              +{profile.skills.length - 5}
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        {profile.hourlyRate && (
-                          <span>${profile.hourlyRate}/hr</span>
                         )}
-                        {profile.experience && (
-                          <span>{profile.experience} yr exp</span>
-                        )}
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          profile.availability === 'available'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                            : profile.availability === 'busy'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {profile.availability}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+
+                        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                          {profile.hourlyRate && (
+                            <span>${profile.hourlyRate}/hr</span>
+                          )}
+                          {profile.experience && (
+                            <span>{profile.experience} yr exp</span>
+                          )}
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            profile.availability === 'available'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              : profile.availability === 'busy'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {profile.availability}
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
             </div>
             <Pagination
               currentPage={currentPage}

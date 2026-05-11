@@ -75,7 +75,7 @@ export default async function AdminSubscriptionsPage() {
                   <span>Name</span>
                   <span>Duration</span>
                   <span>Price</span>
-                  <span>Connects</span>
+                  <span>Contacts</span>
                   <span>Badge</span>
                   <span>Order</span>
                   <span>Active</span>

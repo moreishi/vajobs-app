@@ -198,6 +198,8 @@ async function main() {
   console.log('Seeding database ...\n')
 
   // Delete in dependency order
+  await prisma.vaSubscription.deleteMany()
+  await prisma.vaSubscriptionPlan.deleteMany()
   await prisma.clientSubscription.deleteMany()
   await prisma.subscriptionPlan.deleteMany()
   await prisma.message.deleteMany()
@@ -287,29 +289,37 @@ async function main() {
   // Seed subscription plans (tiered pricing)
   const plans = [
     {
-      name: 'Starter',
-      description: 'Try premium quality with low risk',
+      name: 'Free',
+      description: 'Get started with basic hiring tools',
       durationMonths: 1,
-      priceInCents: 4900,
-      connectsPerPeriod: 30,
+      priceInCents: 0,
+      connectsPerPeriod: null,
       sortOrder: 1,
     },
     {
-      name: 'Growth',
-      description: 'For SMEs and agencies with regular hiring needs',
+      name: 'Starter',
+      description: 'For growing teams with regular hiring needs',
       durationMonths: 1,
-      priceInCents: 14900,
-      connectsPerPeriod: 100,
-      badge: 'Most Popular',
+      priceInCents: 4900,
+      connectsPerPeriod: 75,
       sortOrder: 2,
     },
     {
-      name: 'Scale',
-      description: 'White-glove for teams',
+      name: 'Growth',
+      description: 'For active recruiters who want the best results',
       durationMonths: 1,
-      priceInCents: 34900,
-      connectsPerPeriod: 350,
+      priceInCents: 7900,
+      connectsPerPeriod: 200,
+      badge: 'Most Popular',
       sortOrder: 3,
+    },
+    {
+      name: 'Scale',
+      description: 'For enterprises with high-volume hiring',
+      durationMonths: 1,
+      priceInCents: 14900,
+      connectsPerPeriod: 500,
+      sortOrder: 4,
     },
   ]
 
@@ -346,7 +356,43 @@ async function main() {
 
   console.log(`  Created ${createdCount} job posts (${JOB_BLUEPRINTS.length} categories × 2 levels)`)
 
-  console.log('\nDone!')
+  // Seed VA subscription plans
+  const vaPlans = [
+    {
+      name: 'Premium VA',
+      description: 'Stand out with the Premium VA badge and priority features',
+      priceInCents: 999,
+      badge: 'Most Popular',
+      sortOrder: 1,
+      features: JSON.stringify([
+        'Premium VA badge on your profile',
+        'Priority placement in search results',
+        'Application insights dashboard',
+        'Priority support',
+      ]),
+    },
+    {
+      name: 'Premium VA Pro',
+      description: 'Everything in Premium plus advanced tools and analytics',
+      priceInCents: 1999,
+      sortOrder: 2,
+      features: JSON.stringify([
+        'Everything in Premium VA',
+        'Featured profile badge',
+        'Top search placement',
+        'Advanced analytics & insights',
+        'Profile boost — shown first in category results',
+        'Dedicated priority support',
+      ]),
+    },
+  ]
+
+  for (const p of vaPlans) {
+    await prisma.vaSubscriptionPlan.create({ data: p })
+  }
+  console.log(`  Created ${vaPlans.length} VA subscription plans`)
+
+  console.log(`\nDone!`)
 }
 
 main()

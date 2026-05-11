@@ -96,6 +96,14 @@ export type Interview = {
   updatedAt: string
 }
 
+export type BadgeType = 'verified' | 'expert' | 'rising-talent' | 'top-rated' | 'fast-responder' | 'premium'
+
+export type Badge = {
+  type: BadgeType
+  label: string
+  description: string
+}
+
 export type Availability = 'available' | 'busy' | 'unavailable'
 
 export type Profile = {
@@ -108,6 +116,8 @@ export type Profile = {
   experience: number | null
   availability: Availability
   isPublic: boolean
+  verified: boolean
+  badges: string[]
   resumeUrl: string | null
   createdAt: string
   updatedAt: string

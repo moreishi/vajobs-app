@@ -96,6 +96,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Jobs</Link>
             <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
+            <Link href="/dashboard/va-subscription" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Membership</Link>
           </CardContent>
         </Card>
       </>

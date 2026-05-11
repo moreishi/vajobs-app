@@ -15,8 +15,8 @@ export default async function SubscriptionsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const { name: activeProviderName } = await getActiveProvider()
-  const providerLabel = PROVIDER_LABELS[activeProviderName]
+  const activeProvider = await getActiveProvider().catch(() => null)
+  const providerLabel = activeProvider ? PROVIDER_LABELS[activeProvider.name] : null
 
   const [plans, activeSubscription] = await Promise.all([
     prisma.subscriptionPlan.findMany({
@@ -62,30 +62,30 @@ export default async function SubscriptionsPage() {
         </div>
       )}
 
-      {/* Plans */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Choose a Plan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Payments processed via {providerLabel}
-          </p>
+      {/* Plans — full width */}
+      <section className="-mx-4 sm:-mx-6 mb-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="mb-1 text-xl font-semibold">Choose a Plan</h2>
+          {providerLabel && (
+            <p className="mb-6 text-xs text-muted-foreground">
+              Payments processed via {providerLabel}
+            </p>
+          )}
           {plans.length > 0 ? (
             <SubscriptionPlansList plans={plans} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">No plans available yet.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Quick Links */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle>Subscription History {historyCount > 0 && <span className="text-sm font-normal text-muted-foreground">({historyCount})</span>}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <p className="mb-3 text-sm text-muted-foreground">
               View past subscriptions, status changes, and renewal history.
             </p>
@@ -96,10 +96,10 @@ export default async function SubscriptionsPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle>Billing & Invoices {billingCount > 0 && <span className="text-sm font-normal text-muted-foreground">({billingCount})</span>}</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <p className="mb-3 text-sm text-muted-foreground">
               View payment receipts, billing history, and download invoices.
             </p>

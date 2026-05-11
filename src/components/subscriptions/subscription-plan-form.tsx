@@ -48,8 +48,8 @@ export function SubscriptionPlanForm({ plan }: { plan?: Plan | null }) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="connectsPerPeriod">Connects Per Period</Label>
-          <Input id="connectsPerPeriod" name="connectsPerPeriod" type="number" min={0} defaultValue={plan?.connectsPerPeriod ?? ''} />
+          <Label htmlFor="connectsPerPeriod">Worker Contacts / Month</Label>
+          <Input id="connectsPerPeriod" name="connectsPerPeriod" type="number" min={0} placeholder="e.g. 75" defaultValue={plan?.connectsPerPeriod ?? ''} />
         </div>
         <div>
           <Label htmlFor="sortOrder">Sort Order</Label>

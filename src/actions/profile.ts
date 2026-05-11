@@ -97,6 +97,7 @@ export async function getProfile(userId: string) {
   return {
     ...profile,
     skills: JSON.parse(profile.skills) as string[],
+    badges: JSON.parse(profile.badges || '[]') as string[],
     createdAt: profile.createdAt.toISOString(),
     updatedAt: profile.updatedAt.toISOString(),
     availability: profile.availability as Availability,
@@ -187,6 +188,7 @@ export async function searchTalents(searchParams: {
   const result = profiles.map((p) => ({
     ...p,
     skills: JSON.parse(p.skills) as string[],
+    badges: JSON.parse(p.badges || '[]') as string[],
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     availability: p.availability as Availability,

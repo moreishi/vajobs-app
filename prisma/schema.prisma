@@ -37,6 +37,7 @@ model User {
   receivedInvoices    Invoice[]              @relation("InvoiceRecipient")
   paymentOrders       PaymentOrder[]
   clientSubscriptions ClientSubscription[]
+  vaSubscriptions     VaSubscription[]
   notificationPreferences NotificationPreference[]
   savedSearchAlerts       SavedSearchAlert[]
   createdAt        DateTime  @default(now())
@@ -211,6 +212,7 @@ model Profile {
   availability String   @default("available")
   isPublic     Boolean  @default(true)
   verified     Boolean  @default(false)
+  badges       String   @default("[]")
   resumeUrl    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -520,4 +522,38 @@ model Invoice {
   @@index([fromId])
   @@index([toId])
   @@index([status])
+}
+
+model VaSubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  priceInCents  Int
+  features      String   @default("[]")
+  badge         String?
+  active        Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vaSubscriptions VaSubscription[]
+
+  @@index([active, sortOrder])
+}
+
+model VaSubscription {
+  id        String    @id @default(cuid())
+  userId    String
+  planId    String
+  status    String    @default("active")
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan VaSubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId, status])
+  @@index([planId])
 }

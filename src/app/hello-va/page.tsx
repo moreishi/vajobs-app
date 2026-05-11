@@ -5,8 +5,6 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { PublicHeader } from '@/components/layout/public-header'
-import { PricingSection } from '@/components/subscriptions/pricing-section'
-
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
@@ -274,8 +272,6 @@ export default async function HelloVAPage() {
             </div>
           </div>
         </section>
-
-        <PricingSection />
 
         {/* CTA */}
         <section className="relative overflow-hidden border-b bg-gradient-to-br from-emerald-500/10 via-background to-sky-500/10">

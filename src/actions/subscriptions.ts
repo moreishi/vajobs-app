@@ -17,6 +17,33 @@ export async function createSubscriptionCheckout(planId: string) {
   })
   if (!plan || !plan.active) return { error: 'Plan not found' }
 
+  // Free plan — activate subscription directly without payment
+  if (plan.priceInCents === 0) {
+    // Cancel any existing active subscription
+    await prisma.clientSubscription.updateMany({
+      where: { userId, status: 'active' },
+      data: { status: 'cancelled', cancelledAt: new Date() },
+    })
+
+    const periodStart = new Date()
+    const periodEnd = new Date()
+    periodEnd.setMonth(periodEnd.getMonth() + 1)
+
+    await prisma.clientSubscription.create({
+      data: {
+        userId,
+        planId: plan.id,
+        status: 'active',
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+        autoRenew: true,
+      },
+    })
+
+    revalidatePath('/dashboard/subscriptions')
+    return { redirectUrl: '/dashboard/subscriptions' }
+  }
+
   const orderId = crypto.randomUUID()
 
   try {
