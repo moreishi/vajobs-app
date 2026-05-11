@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate --schema=prisma/schema.dev.prisma && next dev",
-    "build": "prisma generate && next build",
+    "dev": "prisma generate --schema=prisma/schema.dev.prisma && tsx prisma/seed-init.ts && next dev",
+    "build": "prisma generate && tsx prisma/seed-init.ts && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
