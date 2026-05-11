@@ -6,14 +6,34 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      # PostgreSQL connection — all components are dynamic
-      # Reference: postgres://postgres:4tlh02cZx7EHe9KZPIKFGG5cR9ilwNmlOLpnfb7bhLAQjB25mo4whudknuMZWGOz@xrvqwj5ynqw32fnlyqj9dqpb:5432/postgres
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
-      - POSTGRES_HOST=${POSTGRES_HOST:?Set POSTGRES_HOST}
-      - POSTGRES_DB=${POSTGRES_DB:-postgres}
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}
+      # Database
+      - DATABASE_URL=${DATABASE_URL}
+      # NextAuth
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_URL=${AUTH_URL}
+      - AUTH_GOOGLE_ID=${AUTH_GOOGLE_ID}
+      - AUTH_GOOGLE_SECRET=${AUTH_GOOGLE_SECRET}
+      # App
       - NODE_ENV=production
-      # Set AUTH_URL to your production URL (e.g. https://your-app.coolify.app)
-      # Must be set — NextAuth uses it for callback URLs and email links
-      - AUTH_URL=${AUTH_URL:?Set AUTH_URL to your production URL}
+      - CRON_SECRET=${CRON_SECRET}
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
+      # Stripe
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      # PayPal
+      - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
+      - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
+      - PAYPAL_WEBHOOK_ID=${PAYPAL_WEBHOOK_ID}
+      - PAYPAL_SANDBOX=${PAYPAL_SANDBOX}
+      # HitPay
+      - HITPAY_API_KEY=${HITPAY_API_KEY}
+      - HITPAY_SALT=${HITPAY_SALT}
+      # Xendit
+      - XENDIT_SECRET_KEY=${XENDIT_SECRET_KEY}
+      # Maya
+      - MAYA_PUBLIC_KEY=${MAYA_PUBLIC_KEY}
+      - MAYA_SECRET_KEY=${MAYA_SECRET_KEY}
+      - MAYA_SANDBOX=${MAYA_SANDBOX}

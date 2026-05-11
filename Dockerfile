@@ -29,6 +29,8 @@ COPY --from=build /app/public ./public
 
 # Copy Prisma schema & migrations so we can run them at startup
 COPY --from=build /app/prisma ./prisma
+# Use production migrations (PostgreSQL) instead of dev (SQLite)
+RUN rm -rf prisma/migrations && mv prisma/migrations_prod prisma/migrations
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
