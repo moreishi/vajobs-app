@@ -40,7 +40,7 @@ export function SubscriptionPlansList({ plans }: { plans: Plan[] }) {
       {state?.error && (
         <p className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{state.error}</p>
       )}
-      <div className="grid gap-6 md:grid-cols-3 items-start">
+      <div className="grid gap-6 md:grid-cols-3 items-stretch">
         {plans.map((plan) => {
           const isPopular = !!plan.badge
           return (
@@ -52,11 +52,11 @@ export function SubscriptionPlansList({ plans }: { plans: Plan[] }) {
               )}
             >
               {isPopular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground whitespace-nowrap">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground whitespace-nowrap">
                   {plan.badge}
                 </div>
               )}
-              <CardHeader className={cn(isPopular && 'pt-8')}>
+              <CardHeader>
                 <CardTitle className="text-lg">{plan.name}</CardTitle>
                 {plan.description && (
                   <CardDescription>{plan.description}</CardDescription>
