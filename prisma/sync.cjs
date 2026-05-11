@@ -9,10 +9,13 @@ async function applyMigrations() {
     'utf8'
   )
 
+  // Split by semicolon, strip inline comments, filter empty/CREATE SCHEMA
   const statements = sql
     .split(';')
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith('--') && !s.startsWith('CREATE SCHEMA'))
+    .filter((s) => s.length > 0)
+    .map((s) => s.replace(/^--.*$/gm, '').trim())
+    .filter((s) => s.length > 0 && !/^CREATE\s+SCHEMA/i.test(s))
 
   for (const stmt of statements) {
     await prisma.$executeRawUnsafe(stmt + ';')
