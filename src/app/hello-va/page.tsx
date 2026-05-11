@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -7,6 +8,11 @@ import { PublicHeader } from '@/components/layout/public-header'
 import { PricingSection } from '@/components/subscriptions/pricing-section'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Find VA Jobs | VA Jobs Online',
+  description: 'Premium remote jobs for Filipino Virtual Assistants. Work with international clients, earn in USD, and build a career from home.',
+}
 
 const CATEGORIES = [
   { icon: '📋', name: 'Executive Assistant' },

@@ -35,6 +35,8 @@ export function PublicHeader({ isLoggedIn }: Props) {
   const navLinks = [
     { href: '/jobs', label: 'Jobs' },
     { href: '/talents', label: 'Talents' },
+    { href: '/hello-startup', label: 'Hire a VA' },
+    { href: '/hello-va', label: 'Find Work' },
   ]
 
   return (
