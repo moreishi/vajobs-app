@@ -6,7 +6,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await auth()
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/20 to-background">
       <DashboardHeader
         userEmail={session?.user?.email}
         notificationBell={<NotificationBell />}

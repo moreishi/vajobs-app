@@ -53,10 +53,10 @@ export default async function TalentsPage({
   if (params.sort) paginationParams.sort = params.sort
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-muted/20 to-background">
       <PublicHeader isLoggedIn={isLoggedIn} />
 
-      <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
+      <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Browse Talents</h1>
           <p className="mt-2 text-muted-foreground">
