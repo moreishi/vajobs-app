@@ -1,9 +1,13 @@
 const { PrismaClient } = require('@prisma/client')
 const { readFileSync } = require('fs')
+const { resolve } = require('path')
 const prisma = new PrismaClient()
 
 async function applyMigrations() {
-  const sql = readFileSync('./prisma/migrations/00000000000000_init/migration.sql', 'utf8')
+  const sql = readFileSync(
+    resolve(__dirname, 'migrations/00000000000000_init/migration.sql'),
+    'utf8'
+  )
 
   const statements = sql
     .split(';')
@@ -14,8 +18,9 @@ async function applyMigrations() {
     await prisma.$executeRawUnsafe(stmt + ';')
   }
 
+  await prisma.$disconnect()
   console.log('Database schema synced successfully')
-  require('./server.js')
+  require(resolve(__dirname, '../server.js'))
 }
 
 applyMigrations().catch((e) => {
