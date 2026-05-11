@@ -13,6 +13,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
+# Placeholder for prisma.config.ts validation — real DATABASE_URL injected at runtime
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN npx prisma generate
 RUN npm run build
 
@@ -29,6 +31,7 @@ COPY --from=build /app/public ./public
 
 # Copy Prisma schema & migrations so we can run them at startup
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 # Use production migrations (PostgreSQL) instead of dev (SQLite)
 RUN rm -rf prisma/migrations && mv prisma/migrations_prod prisma/migrations
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
