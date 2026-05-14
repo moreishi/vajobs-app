@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 type EmailPayload = {
   to: string
   subject: string
@@ -26,10 +28,10 @@ export async function sendEmail({ to, subject, html }: EmailPayload) {
 
     if (!res.ok) {
       const err = await res.text()
-      console.error('[Email] Failed to send:', err)
+      logger.error('Email', `Failed to send to ${to}: ${res.status}`, err)
     }
   } catch (err) {
-    console.error('[Email] Error:', err)
+    logger.error('Email', `Error sending to ${to}`, err instanceof Error ? err.stack : err)
   }
 }
 

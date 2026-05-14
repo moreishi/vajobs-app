@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { logClientError } from '@/lib/client-logger'
 
 export function AdminExportButtons() {
   const [exporting, setExporting] = useState<'users' | 'connects' | null>(null)
@@ -14,7 +15,7 @@ export function AdminExportButtons() {
       const data = await res.json()
       exportToCsv(`users-${new Date().toISOString().split('T')[0]}.csv`, data)
     } catch (err) {
-      console.error('Export failed:', err)
+      logClientError('Admin Export', 'Failed to export users', err)
     } finally {
       setExporting(null)
     }
@@ -28,7 +29,7 @@ export function AdminExportButtons() {
       const data = await res.json()
       exportToCsv(`connects-${new Date().toISOString().split('T')[0]}.csv`, data)
     } catch (err) {
-      console.error('Export failed:', err)
+      logClientError('Admin Export', 'Failed to export connects', err)
     } finally {
       setExporting(null)
     }

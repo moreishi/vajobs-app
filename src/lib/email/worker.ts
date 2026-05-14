@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 type EmailJob = {
   userId: string
@@ -22,7 +23,7 @@ async function processQueue() {
     try {
       await processJob(job)
     } catch (err) {
-      console.error('[Email Worker] Failed to send:', err)
+      logger.error('Email Worker', `Job failed: ${job.type} -> ${job.userId}`, err instanceof Error ? err.stack : err)
     }
   }
 
