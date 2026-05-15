@@ -68,10 +68,10 @@ async function applyMigrations() {
 async function main() {
   await applyMigrations()
 
-  // Seed on first deploy (development only — production DB has real data)
-  if (process.env.NODE_ENV !== 'production') {
+  // Seed on first deploy (skipped in production unless FORCE_SEED=true)
+  if (process.env.NODE_ENV !== 'production' || process.env.FORCE_SEED === 'true') {
     try {
-      execSync('npx tsx prisma/seed-init.ts', { stdio: 'inherit', cwd: resolve(__dirname, '..') })
+      execSync('node node_modules/tsx/dist/cli.mjs prisma/seed-init.ts', { stdio: 'inherit', cwd: resolve(__dirname, '..') })
     } catch (e) {
       console.error('Seed failed:', e.message)
       process.exit(1)
