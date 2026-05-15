@@ -77,6 +77,8 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 | **Email** | Background worker queue via Resend for all notification types |
 | **Real-time** | Server-Sent Events for live chat with automatic polling fallback and reconnection |
 | **Testing** | 327+ Vitest tests covering actions, auth guards, and business logic |
+| **Migrations** | Custom runner (`prisma/sync.cjs`) applies SQL at startup with `_schema_migrations` tracking table |
+| **Sitemap** | Auto-generated `/sitemap.xml` for public pages, base URL from `NEXT_PUBLIC_URL` |
 
 ## Prerequisites
 
@@ -218,16 +220,9 @@ npx prisma migrate deploy
 ```bash
 # Build and start (app only — provide DATABASE_URL via env)
 docker compose up -d
-
-# Run migrations
-docker compose exec app npx prisma migrate deploy
-
-# Seed the database
-docker compose exec app npm run seed
-
-# View logs
-docker compose logs -f
 ```
+
+The Dockerfile uses a multi-stage build with a custom migration runner. At startup, `prisma/sync.cjs` applies production migrations and starts the Next.js standalone server. Migrations are tracked in a `_schema_migrations` table — already-applied migrations are skipped on restart.
 
 `DATABASE_URL` is required — the compose file uses `${DATABASE_URL:?}` which errors at startup if not set:
 
@@ -236,6 +231,8 @@ DATABASE_URL="postgresql://user:password@host:5432/talent-hub?schema=public"
 AUTH_SECRET="your-secret"
 AUTH_URL="https://your-domain.com"
 ```
+
+**Seed the production database:** Set `FORCE_SEED=true` in the environment and restart. The seed is skipped in production by default (the DB has real data). Once seeded, remove the variable.
 
 ### Option 2: Coolify
 
@@ -247,10 +244,12 @@ Deploy as a Docker Compose stack on your own server.
    - `DATABASE_URL` — the Postgres connection string
    - `AUTH_SECRET` — `openssl rand -hex 32`
    - `AUTH_URL` — your Coolify domain
+   - `NEXT_PUBLIC_URL` — your domain (used for sitemap generation)
    - `RESEND_API_KEY`, `EMAIL_FROM` — optional, for email
    - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — optional
    - Payment provider credential sets — optional
 4. Deploy — Coolify builds the Docker image and serves the app
+5. **First deploy only:** Set `FORCE_SEED=true` and redeploy to seed the database, then remove the variable
 
 ### Option 3: Vercel (Serverless)
 
@@ -299,6 +298,8 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `DATABASE_URL` | Yes | `file:./dev.db` | SQLite (dev) or PostgreSQL (prod) |
 | `AUTH_SECRET` | Yes | — | NextAuth secret (`openssl rand -hex 32`) |
 | `AUTH_URL` | No | `http://localhost:3000` | App URL for email links and callbacks |
+| `NEXT_PUBLIC_URL` | No | `https://vajobs.online` | Base URL for sitemap generation |
+| `FORCE_SEED` | No | — | Set to `true` to run seed in production (e.g., Coolify first deploy) |
 | `CRON_SECRET` | No | — | Secret for subscription renewal cron endpoint |
 | `AUTH_GOOGLE_ID` | No | — | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | No | — | Google OAuth client secret |
@@ -327,7 +328,7 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `npm start` | Start production server |
 | `npm test` | Run unit test suite (Vitest, 327+ tests) |
 | `npm run test:e2e` | Run E2E tests (Playwright) — starts dev server automatically |
-| `npm run seed` | Seed database with sample data |
+| `npm run seed` | Generate dev Prisma client then seed database with sample data |
 | `npx prisma migrate dev --schema=prisma/schema.dev.prisma` | Run dev migration |
 | `npx prisma migrate deploy` | Run production migration |
 | `npx prisma generate --schema=prisma/schema.dev.prisma` | Generate dev Prisma client |
