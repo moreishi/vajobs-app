@@ -27,7 +27,7 @@ export default async function JobsPage({
   const params = await searchParams
   const currentPage = Math.max(1, parseInt(params.page || '1'))
 
-  const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql')
+  const isPostgres = process.env.NODE_ENV === 'production'
   const ci = (val: string) => isPostgres ? { contains: val, mode: 'insensitive' as const } : { contains: val }
 
   const where: Record<string, unknown> = { status: 'open' }
