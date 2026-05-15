@@ -68,12 +68,14 @@ async function applyMigrations() {
 async function main() {
   await applyMigrations()
 
-  // Seed if database is empty
-  try {
-    execSync('npx tsx prisma/seed-init.ts', { stdio: 'inherit', cwd: resolve(__dirname, '..') })
-  } catch (e) {
-    console.error('Seed failed:', e.message)
-    process.exit(1)
+  // Seed on first deploy (development only — production DB has real data)
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      execSync('npx tsx prisma/seed-init.ts', { stdio: 'inherit', cwd: resolve(__dirname, '..') })
+    } catch (e) {
+      console.error('Seed failed:', e.message)
+      process.exit(1)
+    }
   }
 
   require(resolve(__dirname, '../server.js'))
