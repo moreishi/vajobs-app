@@ -36,7 +36,9 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY --from=build /app/node_modules/tsx ./node_modules/tsx
 COPY --from=build /app/node_modules/esbuild ./node_modules/esbuild
+COPY --from=build /app/node_modules/@esbuild ./node_modules/@esbuild
 COPY --from=build /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
+COPY --from=build /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
 
 EXPOSE 3000
 
