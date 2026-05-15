@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
+import { ci } from '@/lib/db-utils'
 import type { Availability } from '@/types'
 
 export async function updateProfile(formData: FormData) {
@@ -142,7 +143,7 @@ export async function searchTalents(searchParams: {
     const skillFilters = skills.split(',').map((s) => s.trim()).filter(Boolean)
     if (skillFilters.length > 0) {
       where.AND = skillFilters.map((skill) => ({
-        skills: { contains: skill },
+        skills: ci(skill),
       }))
     }
   }
@@ -150,15 +151,15 @@ export async function searchTalents(searchParams: {
   if (query) {
     // Also find users whose name matches (to include their profiles)
     const matchingUsers = await prisma.user.findMany({
-      where: { name: { contains: query } },
+      where: { name: ci(query) },
       select: { id: true },
     })
     const userIds = matchingUsers.map((u) => u.id)
 
     const orConditions: Record<string, unknown>[] = [
-      { headline: { contains: query } },
-      { bio: { contains: query } },
-      { skills: { contains: query } },
+      { headline: ci(query) },
+      { bio: ci(query) },
+      { skills: ci(query) },
     ]
     if (userIds.length > 0) {
       orConditions.push({ userId: { in: userIds } })

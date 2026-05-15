@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ci } from '@/lib/db-utils'
 
 export async function updateUserRole(userId: string, formData: FormData) {
   const session = await auth()
@@ -69,8 +70,8 @@ export async function getEmailLogs(params: {
   if (type) where.type = type
   if (search) {
     where.OR = [
-      { email: { contains: search } },
-      { subject: { contains: search } },
+      { email: ci(search) },
+      { subject: ci(search) },
     ]
   }
 

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { ci } from '@/lib/db-utils'
 import { JobCard } from '@/components/jobs/job-card'
 import { JobSearch } from '@/components/jobs/job-search'
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button'
@@ -26,9 +27,6 @@ export default async function JobsPage({
   const isLoggedIn = !!session?.user
   const params = await searchParams
   const currentPage = Math.max(1, parseInt(params.page || '1'))
-
-  const isPostgres = process.env.NODE_ENV === 'production'
-  const ci = (val: string) => isPostgres ? { contains: val, mode: 'insensitive' as const } : { contains: val }
 
   const where: Record<string, unknown> = { status: 'open' }
 
