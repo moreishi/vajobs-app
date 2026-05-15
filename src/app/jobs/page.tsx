@@ -27,6 +27,9 @@ export default async function JobsPage({
   const params = await searchParams
   const currentPage = Math.max(1, parseInt(params.page || '1'))
 
+  const isPostgres = process.env.DATABASE_URL?.startsWith('postgresql')
+  const ci = (val: string) => isPostgres ? { contains: val, mode: 'insensitive' as const } : { contains: val }
+
   const where: Record<string, unknown> = { status: 'open' }
 
   if (params.type) {
@@ -35,10 +38,10 @@ export default async function JobsPage({
 
   if (params.query) {
     where.OR = [
-      { title: { contains: params.query } },
-      { description: { contains: params.query } },
-      { shortDescription: { contains: params.query } },
-      { skills: { contains: params.query } },
+      { title: ci(params.query) },
+      { description: ci(params.query) },
+      { shortDescription: ci(params.query) },
+      { skills: ci(params.query) },
     ]
   }
 
@@ -46,13 +49,13 @@ export default async function JobsPage({
     const skillFilters = params.skills.split(',').map((s) => s.trim()).filter(Boolean)
     if (skillFilters.length > 0) {
       where.AND = skillFilters.map((skill) => ({
-        skills: { contains: skill },
+        skills: ci(skill),
       }))
     }
   }
 
   if (params.location) {
-    where.location = { contains: params.location }
+    where.location = ci(params.location)
   }
 
   const orderBy = params.sort === 'oldest' ? { createdAt: 'asc' as const } : { createdAt: 'desc' as const }
