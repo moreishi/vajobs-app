@@ -38,6 +38,7 @@ export default async function JobsPage({
       { title: { contains: params.query } },
       { description: { contains: params.query } },
       { shortDescription: { contains: params.query } },
+      { skills: { contains: params.query } },
     ]
   }
 
