@@ -4,15 +4,40 @@ const { resolve } = require('path')
 const { execSync } = require('child_process')
 const prisma = new PrismaClient()
 
+const TRACKING_TABLE = '_schema_migrations'
+
+async function ensureTrackingTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "${TRACKING_TABLE}" (
+      name TEXT PRIMARY KEY,
+      applied_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `)
+}
+
+async function getAppliedMigrations() {
+  const rows = await prisma.$queryRawUnsafe(
+    `SELECT name FROM "${TRACKING_TABLE}" ORDER BY name`
+  )
+  return new Set(rows.map((r) => r.name))
+}
+
 async function applyMigrations() {
   const migrationsDir = resolve(__dirname, 'migrations')
 
-  // Read all migration folders sorted by name
   const folders = readdirSync(migrationsDir)
     .filter((name) => /^\d+/.test(name))
     .sort()
 
+  await ensureTrackingTable()
+  const applied = await getAppliedMigrations()
+
   for (const folder of folders) {
+    if (applied.has(folder)) {
+      console.log(`  Already applied: ${folder}`)
+      continue
+    }
+
     const sqlPath = resolve(migrationsDir, folder, 'migration.sql')
     if (!statSync(sqlPath).isFile()) continue
 
@@ -26,9 +51,14 @@ async function applyMigrations() {
       .map((s) => s.replace(/^--.*$/gm, '').trim())
       .filter((s) => s.length > 0 && !/^CREATE\s+SCHEMA/i.test(s))
 
-    for (const stmt of statements) {
-      await prisma.$executeRawUnsafe(stmt + ';')
-    }
+    await prisma.$transaction(async (tx) => {
+      for (const stmt of statements) {
+        await tx.$executeRawUnsafe(stmt + ';')
+      }
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "${TRACKING_TABLE}" (name) VALUES ('${folder}')`
+      )
+    })
   }
 
   console.log('Database schema synced successfully')
