@@ -220,3 +220,16 @@ export async function seedAdmin(): Promise<{ success?: boolean; message?: string
     return { error: 'Failed to seed admin user' }
   }
 }
+
+export async function updateProfileImage(imageUrl: string) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Not authenticated' }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { image: imageUrl },
+  })
+
+  revalidatePath(ROUTES.SETTINGS)
+  return { success: true }
+}
