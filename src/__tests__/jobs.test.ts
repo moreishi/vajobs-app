@@ -11,6 +11,8 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       createMany: vi.fn(),
       count: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
     },
     connectTransaction: {
       create: vi.fn(),
@@ -44,12 +46,14 @@ const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 let seedJobs: typeof import('@/actions/jobs').seedJobs
 let createJob: typeof import('@/actions/jobs').createJob
+let deleteJob: typeof import('@/actions/jobs').deleteJob
 
 beforeEach(async () => {
   vi.clearAllMocks()
   const mod = await import('@/actions/jobs')
   seedJobs = mod.seedJobs
   createJob = mod.createJob
+  deleteJob = mod.deleteJob
 })
 
 describe('seedJobs', () => {
@@ -302,6 +306,55 @@ describe('createJob', () => {
 
     await createJob(formData)
   })
+
+describe('deleteJob', () => {
+  it('returns error when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(null)
+    const result = await deleteJob('job-1')
+    expect(result).toEqual({ error: 'Not authenticated' })
+  })
+
+  it('returns error when job not found', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(null)
+    const result = await deleteJob('nonexistent')
+    expect(result).toEqual({ error: 'Job not found' })
+  })
+
+  it('returns error when not authorized', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'other-user', role: 'client' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce({
+      id: 'job-1',
+      posterId: 'owner-id',
+    } as any)
+    const result = await deleteJob('job-1')
+    expect(result).toEqual({ error: 'Not authorized' })
+  })
+
+  it('deletes job when owner', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'owner-id', role: 'client' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce({
+      id: 'job-1',
+      posterId: 'owner-id',
+    } as any)
+
+    await deleteJob('job-1')
+
+    expect(prisma.jobPost.delete).toHaveBeenCalledWith({ where: { id: 'job-1' } })
+  })
+
+  it('allows admin to delete any job', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'admin-id', role: 'admin' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce({
+      id: 'job-1',
+      posterId: 'other-user',
+    } as any)
+
+    await deleteJob('job-1')
+
+    expect(prisma.jobPost.delete).toHaveBeenCalledWith({ where: { id: 'job-1' } })
+  })
+})
 
   it('preserves skills order from input', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)

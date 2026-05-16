@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
+import { deleteJob } from '@/actions/jobs'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,14 +39,15 @@ export default async function AdminJobsPage() {
           {jobs.length > 0 ? (
             <div className="overflow-x-auto">
               <div className="min-w-[500px] divide-y">
-                <div className="grid grid-cols-5 gap-4 py-2 text-xs font-medium text-muted-foreground">
+                <div className="grid grid-cols-6 gap-4 py-2 text-xs font-medium text-muted-foreground">
                 <span className="col-span-2">Title</span>
                 <span>Poster</span>
                 <span>Apps</span>
                 <span></span>
+                <span></span>
               </div>
               {jobs.map((job) => (
-                <div key={job.id} className="grid grid-cols-5 gap-4 py-3 items-center">
+                <div key={job.id} className="grid grid-cols-6 gap-4 py-3 items-center">
                   <div className="col-span-2 min-w-0">
                     <Link href={`/jobs/${job.id}`} className="truncate text-sm font-medium hover:underline block">
                       {job.title}
@@ -58,6 +60,18 @@ export default async function AdminJobsPage() {
                   <div><span className="text-sm">{job._count.applications}</span></div>
                   <div>
                     <JobStatusToggle jobId={job.id} currentStatus={job.status as 'open' | 'closed'} />
+                  </div>
+                  <div>
+                    <form
+                      action={async () => {
+                        'use server'
+                        await deleteJob(job.id)
+                      }}
+                    >
+                      <button type="submit" className="text-xs text-destructive hover:underline">
+                        Delete
+                      </button>
+                    </form>
                   </div>
                 </div>
               ))}

@@ -11,6 +11,7 @@ import { TalentMatchingPanel } from '@/components/jobs/talent-matching-panel'
 import type { AssessmentData } from '@/actions/assessments'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card'
+import { deleteJob } from '@/actions/jobs'
 
 const JOB_TYPES = [
   { value: 'full-time', label: 'Full Time' },
@@ -244,6 +245,17 @@ export default function EditJobPage() {
                 <Link href="/dashboard" className="inline-flex items-center rounded-md border border-input px-4 text-sm font-medium hover:bg-accent">
                   Cancel
                 </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to delete this job? This cannot be undone.')) {
+                      await deleteJob(jobId)
+                    }
+                  }}
+                  className="ml-auto inline-flex items-center rounded-md border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                >
+                  Delete Job
+                </button>
               </div>
             </form>
           </CardContent>

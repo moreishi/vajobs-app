@@ -7,6 +7,7 @@ import { JobSearch } from '@/components/jobs/job-search'
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button'
 import { Pagination } from '@/components/pagination'
 import { PublicHeader } from '@/components/layout/public-header'
+import { getSavedJobIds } from '@/actions/saved-jobs'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
 export const metadata = {
@@ -58,7 +59,7 @@ export default async function JobsPage({
 
   const orderBy = params.sort === 'oldest' ? { createdAt: 'asc' as const } : { createdAt: 'desc' as const }
 
-  const [total, prismaJobs] = await Promise.all([
+  const [total, prismaJobs, savedJobIds] = await Promise.all([
     prisma.jobPost.count({ where }),
     prisma.jobPost.findMany({
       where,
@@ -66,8 +67,10 @@ export default async function JobsPage({
       skip: (currentPage - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
+    isLoggedIn ? getSavedJobIds() : [],
   ])
 
+  const savedSet = new Set(savedJobIds)
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const jobs: JobPost[] = prismaJobs.map(j => ({
@@ -126,7 +129,7 @@ export default async function JobsPage({
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {jobs.map((job) => (
-                <JobCard key={job.id} job={job as JobPost} />
+                <JobCard key={job.id} job={job as JobPost} isSaved={isLoggedIn ? savedSet.has(job.id) : undefined} />
               ))}
             </div>
             <Pagination

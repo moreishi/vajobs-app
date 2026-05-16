@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SaveButton } from '@/components/jobs/save-button'
 import type { JobPost } from '@/types'
 
-export function JobCard({ job }: { job: JobPost }) {
+export function JobCard({ job, isSaved }: { job: JobPost; isSaved?: boolean }) {
   return (
-    <Link href={`/jobs/${job.id}`} className="block transition-all hover:opacity-80">
-      <Card className="h-full">
+    <Card className="relative h-full">
+      <Link href={`/jobs/${job.id}`} className="block transition-all hover:opacity-80">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="line-clamp-1">{job.title}</CardTitle>
@@ -47,7 +48,12 @@ export function JobCard({ job }: { job: JobPost }) {
             </div>
           )}
         </CardContent>
-      </Card>
-    </Link>
+      </Link>
+      {isSaved !== undefined && (
+        <div className="absolute right-2 top-2 z-10">
+          <SaveButton jobId={job.id} isSaved={isSaved} />
+        </div>
+      )}
+    </Card>
   )
 }

@@ -159,6 +159,21 @@ export async function updateJobStatus(jobId: string, formData: FormData) {
   return { success: true }
 }
 
+export async function deleteJob(jobId: string) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Not authenticated' }
+
+  const job = await prisma.jobPost.findUnique({ where: { id: jobId } })
+  if (!job) return { error: 'Job not found' }
+  if (job.posterId !== session.user.id && session.user.role !== 'admin') {
+    return { error: 'Not authorized' }
+  }
+
+  await prisma.jobPost.delete({ where: { id: jobId } })
+
+  redirect(ROUTES.DASHBOARD)
+}
+
 export async function seedJobs() {
   const poster = await prisma.user.findFirst({
     where: { role: { in: ['client', 'admin'] } },
