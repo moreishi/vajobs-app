@@ -38,6 +38,24 @@ export const ROUTES = {
 export const COMMON_SKILLS = [
   'Administrative Support', 'Customer Service', 'Data Entry', 'Social Media Management',
   'Bookkeeping', 'Email Management', 'Calendar Management', 'Project Management',
-  'Content Writing', 'Graphic Design', 'Video Editing', 'Web Development',
-  'SEO', 'Digital Marketing', 'Sales', 'Lead Generation',
+  'Content Writing', 'Graphic Design', 'Digital Marketing', 'Sales', 'Lead Generation',
+
+  // Video & Media
+  'Video Editing', 'Video Production', 'Motion Graphics', 'Animation', 'Audio Editing', 'Podcast Production',
+
+  // SEO & Marketing
+  'SEO', 'Content Strategy', 'Copywriting', 'Email Marketing', 'Analytics & Reporting',
+
+  // Web Development
+  'Web Development', 'WordPress', 'Shopify', 'UI/UX Design', 'Frontend Development', 'HTML/CSS',
+
+  // Software
+  'Software Development', 'Software Testing', 'API Development', 'Database Management', 'DevOps',
+
+  // DevOps & Cloud
+  'Cloud Computing (AWS/GCP/Azure)', 'Docker & Kubernetes', 'CI/CD Pipeline', 'Infrastructure as Code',
+  'Linux Administration', 'Cloud Architecture', 'Site Reliability Engineering (SRE)', 'GitHub/GitLab Administration',
+
+  // AI & Automation
+  'AI & Machine Learning', 'AI Automation', 'Chatbot Development', 'Prompt Engineering', 'Data Analysis',
 ] as const
