@@ -21,6 +21,7 @@ export default async function ApplicationsPage({
   const currentPage = Math.max(1, parseInt(params.page || '1'))
 
   const role = session.user.role
+  const timezone = session.user.timezone
   const isTalent = role === 'talent'
   const isClient = role === 'client' || role === 'admin'
 
@@ -110,6 +111,7 @@ export default async function ApplicationsPage({
           {typedApps.map((app) => (
             <ApplicationCard
               key={app.id}
+              timezone={timezone}
               application={{
                 id: app.id,
                 jobPostId: app.jobPostId,

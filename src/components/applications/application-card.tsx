@@ -4,7 +4,7 @@ import { ApplicationStatusBadge } from '@/components/applications/application-st
 import { formatDateShort } from '@/lib/dates'
 import type { Application } from '@/types'
 
-export function ApplicationCard({ application }: { application: Application }) {
+export function ApplicationCard({ application, timezone }: { application: Application; timezone?: string | null }) {
   const isClientView = !!application.applicant
   const isTalentView = !!application.jobPost
 
@@ -36,8 +36,8 @@ export function ApplicationCard({ application }: { application: Application }) {
         <CardContent>
           <p className="text-xs text-muted-foreground">
             {isTalentView
-              ? `Applied on ${formatDateShort(application.createdAt)}`
-              : `Applied by ${application.applicant!.name || application.applicant!.email} on ${formatDateShort(application.createdAt)}`
+              ? `Applied on ${formatDateShort(application.createdAt, timezone)}`
+              : `Applied by ${application.applicant!.name || application.applicant!.email} on ${formatDateShort(application.createdAt, timezone)}`
             }
           </p>
         </CardContent>

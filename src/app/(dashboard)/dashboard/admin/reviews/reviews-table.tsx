@@ -3,6 +3,7 @@
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { StarRating } from '@/components/reviews/star-rating'
+import { FormattedDate } from '@/components/ui/formatted-date'
 import { deleteReview } from '@/actions/admin-reviews'
 
 type ReviewWithRelations = {
@@ -57,7 +58,7 @@ export function ReviewsTable({ reviews }: { reviews: ReviewWithRelations[] }) {
               {review.comment || <span className="italic">No comment</span>}
             </div>
             <div className="col-span-1 text-muted-foreground">
-              {new Date(review.createdAt).toLocaleDateString()}
+              <FormattedDate date={review.createdAt} />
             </div>
             <div className="col-span-1">
               <button

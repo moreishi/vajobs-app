@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { FormattedDate } from '@/components/ui/formatted-date'
 import { endEngagement } from '@/actions/admin-engagements'
 
 type EngagementWithRelations = {
@@ -64,7 +65,7 @@ export function EngagementsTable({ engagements }: { engagements: EngagementWithR
               {e.rate ? `$${e.rate}` : '-'}
             </div>
             <div className="col-span-1 text-muted-foreground">
-              {new Date(e.startDate).toLocaleDateString()}
+              <FormattedDate date={e.startDate} />
             </div>
             <div className="col-span-1">
               {e.status === 'active' && (
