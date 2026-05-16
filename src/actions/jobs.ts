@@ -36,6 +36,8 @@ export async function createJob(formData: FormData) {
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
 
+  const expiresAt = status === 'draft' ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
   const job = await prisma.jobPost.create({
     data: {
       title,
@@ -46,6 +48,7 @@ export async function createJob(formData: FormData) {
       salaryRange,
       skills: JSON.stringify(skills),
       status: status === 'draft' ? 'draft' : 'open',
+      expiresAt,
       posterId: session.user.id,
       posterName: user?.name || session.user.email?.split('@')[0] || 'Client',
     },
@@ -99,6 +102,9 @@ export async function updateJob(jobId: string, formData: FormData) {
     ? skillsRaw.split(',').map((s) => s.trim()).filter(Boolean)
     : []
 
+  const newStatus = status === 'draft' ? 'draft' : 'open'
+  const expiresAt = job.expiresAt ?? (newStatus === 'open' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : undefined)
+
   await prisma.jobPost.update({
     where: { id: jobId },
     data: {
@@ -109,7 +115,8 @@ export async function updateJob(jobId: string, formData: FormData) {
       type,
       salaryRange,
       skills: JSON.stringify(skills),
-      status: status === 'draft' ? 'draft' : 'open',
+      status: newStatus,
+      expiresAt,
     },
   })
 
@@ -131,6 +138,7 @@ export async function getJob(jobId: string) {
   return {
     ...job,
     skills: JSON.parse(job.skills) as string[],
+    expiresAt: job.expiresAt?.toISOString() ?? null,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
   }

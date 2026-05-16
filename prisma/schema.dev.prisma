@@ -97,6 +97,7 @@ model JobPost {
   salaryRange      String?
   skills           String   @default("[]")
   status           String   @default("open")
+  expiresAt        DateTime?
   posterId         String
   posterName       String?
   poster           User     @relation(fields: [posterId], references: [id], onDelete: Cascade)

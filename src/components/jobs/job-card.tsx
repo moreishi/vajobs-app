@@ -3,16 +3,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SaveButton } from '@/components/jobs/save-button'
 import type { JobPost } from '@/types'
 
+function getExpiryLabel(expiresAt: string | null): { label: string; className: string } | null {
+  if (!expiresAt) return null
+  const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  if (days < 0) return { label: 'Expired', className: 'bg-destructive/10 text-destructive' }
+  if (days <= 3) return { label: `${days}d left`, className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' }
+  if (days <= 7) return { label: `${days}d left`, className: 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300' }
+  return null
+}
+
 export function JobCard({ job, isSaved }: { job: JobPost; isSaved?: boolean }) {
+  const expiry = getExpiryLabel(job.expires_at)
   return (
     <Card className="relative h-full">
       <Link href={`/jobs/${job.id}`} className="block transition-all hover:opacity-80">
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="line-clamp-1">{job.title}</CardTitle>
-            <span className="inline-flex shrink-0 items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-secondary-foreground">
-              {job.type.replace('-', ' ')}
-            </span>
+            <div className="flex shrink-0 items-center gap-1">
+              {expiry && (
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${expiry.className}`}>
+                  {expiry.label}
+                </span>
+              )}
+              <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-secondary-foreground">
+                {job.type.replace('-', ' ')}
+              </span>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">

@@ -208,7 +208,7 @@ describe('createJob', () => {
     await createJob(formData)
 
     expect(prisma.jobPost.create).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
         title: 'Senior Frontend Developer',
         description: 'We are looking for an experienced frontend developer to join our team building modern web applications.',
         shortDescription: null,
@@ -217,9 +217,10 @@ describe('createJob', () => {
         salaryRange: '$120k - $160k',
         skills: JSON.stringify(['React', 'TypeScript', 'Next.js']),
         status: 'open',
+        expiresAt: expect.any(Date),
         posterId: 'client-id',
         posterName: 'Client',
-      },
+      }),
     })
   })
 

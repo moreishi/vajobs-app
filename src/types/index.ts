@@ -19,6 +19,7 @@ export type JobPost = {
   status: JobStatus
   poster_id: string
   poster_name: string | null
+  expires_at: string | null
   created_at: string
   updated_at: string
 }

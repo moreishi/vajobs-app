@@ -8,6 +8,7 @@ import { SaveSearchButton } from '@/components/saved-searches/save-search-button
 import { Pagination } from '@/components/pagination'
 import { PublicHeader } from '@/components/layout/public-header'
 import { getSavedJobIds } from '@/actions/saved-jobs'
+import { closeExpiredJobs } from '@/lib/jobs'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
 export const metadata = {
@@ -59,6 +60,9 @@ export default async function JobsPage({
 
   const orderBy = params.sort === 'oldest' ? { createdAt: 'asc' as const } : { createdAt: 'desc' as const }
 
+  // Close expired jobs before listing
+  await closeExpiredJobs()
+
   const [total, prismaJobs, savedJobIds] = await Promise.all([
     prisma.jobPost.count({ where }),
     prisma.jobPost.findMany({
@@ -85,6 +89,7 @@ export default async function JobsPage({
     status: j.status as JobStatus,
     poster_id: j.posterId,
     poster_name: j.posterName,
+    expires_at: j.expiresAt?.toISOString() ?? null,
     created_at: j.createdAt.toISOString(),
     updated_at: j.updatedAt.toISOString(),
   }))

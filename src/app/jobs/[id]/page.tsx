@@ -61,6 +61,7 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
     status: job.status as JobStatus,
     poster_id: job.posterId,
     poster_name: job.posterName,
+    expires_at: job.expiresAt?.toISOString() ?? null,
     created_at: job.createdAt.toISOString(),
     updated_at: job.updatedAt.toISOString(),
   }
@@ -125,6 +126,9 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
                   </Link>
                 </>
               ) : ''}
+              {typed.expires_at && (
+                <> &middot; Expires {new Date(typed.expires_at).toLocaleDateString()}</>
+              )}
             </div>
 
             {session?.user?.id ? (
