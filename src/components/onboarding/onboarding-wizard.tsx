@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { completeTalentOnboarding, completeClientOnboarding, skipOnboarding } from '@/actions/onboarding'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +11,6 @@ import { COMMON_SKILLS } from '@/lib/constants'
 import { CheckIcon } from 'lucide-react'
 
 export function TalentOnboarding() {
-  const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,9 +42,8 @@ export function TalentOnboarding() {
     if (result.error) {
       setError(result.error)
       setLoading(false)
-    } else {
-      router.push('/dashboard')
     }
+    // On success the server action redirects to /dashboard
   }
 
   function toggleSkill(skill: string) {
@@ -202,7 +199,6 @@ export function TalentOnboarding() {
 }
 
 export function ClientOnboarding() {
-  const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -228,9 +224,8 @@ export function ClientOnboarding() {
     if (result.error) {
       setError(result.error)
       setLoading(false)
-    } else {
-      router.push('/dashboard')
     }
+    // On success the server action redirects to /dashboard
   }
 
   return (

@@ -56,7 +56,7 @@ export default function NewJobPage() {
       <Link href="/dashboard" className="mb-6 inline-flex text-sm text-muted-foreground hover:text-foreground">
         &larr; Dashboard
       </Link>
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Post a New Job</CardTitle>
