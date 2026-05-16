@@ -19,15 +19,16 @@ vi.mock('@/actions/notifications', () => ({
 const { prisma } = await import('@/lib/prisma')
 
 let awardXp: typeof import('@/actions/reputation').awardXp
-let getTier: typeof import('@/actions/reputation').getTier
 let getReputation: typeof import('@/actions/reputation').getReputation
+let getTier: typeof import('@/lib/reputation').getTier
 
 beforeEach(async () => {
   vi.clearAllMocks()
   const mod = await import('@/actions/reputation')
   awardXp = mod.awardXp
-  getTier = mod.getTier
   getReputation = mod.getReputation
+  const lib = await import('@/lib/reputation')
+  getTier = lib.getTier
 })
 
 describe('getTier', () => {

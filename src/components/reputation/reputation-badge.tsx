@@ -1,6 +1,7 @@
 'use client'
 
-import { getTier, type Tier } from '@/actions/reputation'
+import { getTier } from '@/lib/reputation'
+import type { Tier } from '@/lib/reputation'
 
 const TIER_COLORS: Record<string, { bg: string; text: string; ring: string; icon: string }> = {
   Bronze: {

@@ -1,6 +1,6 @@
 'use client'
 
-import { getTier } from '@/actions/reputation'
+import { getTier } from '@/lib/reputation'
 
 type Props = {
   xp: number

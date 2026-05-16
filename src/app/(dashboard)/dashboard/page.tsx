@@ -10,6 +10,8 @@ import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ensureReferralCode } from '@/actions/referrals'
 import { getReferralConversionStats } from '@/lib/referrals'
 import { isMembershipEnabled } from '@/lib/features'
+import { getReputation } from '@/actions/reputation'
+import { ReputationBadge, ReputationProgress } from '@/components/reputation'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -52,7 +54,7 @@ export default async function DashboardPage() {
   const membershipEnabled = await isMembershipEnabled()
 
   if (role === 'talent') {
-    const [u, pendingApps, interviews, acceptedApps, referralEarnings, referredUsers] = await Promise.all([
+    const [u, pendingApps, interviews, acceptedApps, referralEarnings, referredUsers, rep] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { connects: true, referralCode: true },
@@ -79,6 +81,7 @@ export default async function DashboardPage() {
           },
         },
       }),
+      getReputation(userId),
     ])
     const connects = u?.connects ?? 0
     let referralCode = u?.referralCode
@@ -90,7 +93,7 @@ export default async function DashboardPage() {
       <>
         <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
 
-        <div className="grid gap-4 sm:grid-cols-5 mb-8">
+        <div className="grid gap-4 sm:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Connects Balance</CardTitle></CardHeader>
             <CardContent><p className="text-3xl font-bold">{connects}</p></CardContent>
@@ -111,6 +114,17 @@ export default async function DashboardPage() {
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Referral Earnings</CardTitle></CardHeader>
             <CardContent><p className="text-3xl font-bold text-green-600 dark:text-green-400">+{totalReferralEarnings}</p></CardContent>
           </Card>
+          {rep && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Reputation</CardTitle></CardHeader>
+              <CardContent>
+                <ReputationBadge xp={rep.xp} tier={rep.tier} showXp size="md" />
+                <div className="mt-2">
+                  <ReputationProgress xp={rep.xp} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <Card className="mb-8">

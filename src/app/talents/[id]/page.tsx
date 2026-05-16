@@ -9,6 +9,8 @@ import { PortfolioGallery } from '@/components/portfolio/portfolio-gallery'
 import { TalentBadge } from '@/components/talents/talent-badge'
 import { ReviewSection } from '@/components/reviews/review-section'
 import { computeBadges, type BadgeOptions } from '@/lib/badges'
+import { ReputationBadge, ReputationProgress } from '@/components/reputation'
+import { getReputation } from '@/actions/reputation'
 
 export const metadata = {
   title: 'Talent Profile - VA Jobs Online',
@@ -45,6 +47,7 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
     hasPremium: !!vaSubscription,
   }
   const badges = computeBadges(profile, badgeOptions)
+  const rep = await getReputation(id)
 
   const availabilityColor =
     profile.availability === 'available'
@@ -81,13 +84,12 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
                     <div className="flex items-center gap-2 flex-wrap">
                       <h1 className="text-2xl font-bold">{profile.user.name || profile.user.email}</h1>
                     </div>
-                    {badges.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {badges.map((badge) => (
-                          <TalentBadge key={badge.type} type={badge.type} size="md" />
-                        ))}
-                      </div>
-                    )}
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {badges.map((badge) => (
+                        <TalentBadge key={badge.type} type={badge.type} size="md" />
+                      ))}
+                      {rep && <ReputationBadge xp={rep.xp} tier={rep.tier} showXp size="md" />}
+                    </div>
                     {profile.headline && (
                       <p className="mt-1 text-lg text-muted-foreground">{profile.headline}</p>
                     )}
@@ -128,6 +130,15 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
                       {skill}
                     </span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {rep && (
+              <div className="mt-6">
+                <h2 className="text-sm font-medium">Reputation</h2>
+                <div className="mt-2 max-w-sm">
+                  <ReputationProgress xp={rep.xp} />
                 </div>
               </div>
             )}
