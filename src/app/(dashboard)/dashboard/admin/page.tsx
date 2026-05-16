@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { BarChart } from '@/components/ui/bar-chart'
 import { LineChart } from '@/components/ui/line-chart'
+import { GroupedBarChart } from '@/components/ui/grouped-bar-chart'
 import { PieChart } from '@/components/ui/pie-chart'
 import { AdminExportButtons } from './admin-export-buttons'
 import { MembershipToggle } from '@/components/admin/membership-toggle'
@@ -85,6 +86,10 @@ export default async function AdminDashboardPage() {
     vaNewSubsLast30,
     vaCancelledLast30,
     vaEndingWithin30d,
+
+    referralCount,
+    totalRewards,
+    activeReferrers,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.groupBy({ by: ['role'], _count: true }),
@@ -187,6 +192,11 @@ export default async function AdminDashboardPage() {
     prisma.vaSubscription.count({
       where: { status: 'active', endDate: { lte: thirtyDaysAgo, gte: new Date() } },
     }),
+
+    // Referral analytics
+    prisma.user.count({ where: { referredById: { not: null } } }),
+    prisma.referralReward.aggregate({ _sum: { amount: true } }),
+    prisma.referralReward.groupBy({ by: ['referrerId'], _count: true }),
   ])
 
   const membershipEnabled = await getMembershipEnabled()
@@ -341,6 +351,28 @@ export default async function AdminDashboardPage() {
   const vaChurnRate = vaActiveSubs.length > 0
     ? Math.round((vaCancelledLast30 / (vaActiveSubs.length + vaCancelledLast30)) * 100)
     : 0
+
+  // Referral analytics
+  const totalReferred = referralCount
+  const totalRewardAmount = totalRewards._sum.amount ?? 0
+  const uniqueReferrers = activeReferrers.length
+
+  // Monthly signups by role (last 6 months)
+  const monthlySignupsByRole = last6Months.map((monthStart) => {
+    const nextMonth = new Date(monthStart)
+    nextMonth.setMonth(nextMonth.getMonth() + 1)
+    const monthUsers = signupsLast6Months.filter((u) => {
+      const c = new Date(u.createdAt)
+      return c >= monthStart && c < nextMonth
+    })
+    return {
+      label: monthStart.toLocaleDateString(undefined, { month: 'short' }),
+      values: [
+        { name: 'talent', value: monthUsers.filter((u) => u.role === 'talent').length },
+        { name: 'client', value: monthUsers.filter((u) => u.role === 'client').length },
+      ],
+    }
+  })
 
   // Plan distribution
   const planDist = subsByPlan.map((g) => {
@@ -547,6 +579,36 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* Referral Analytics */}
+      {totalReferred > 0 && (
+        <div className="mb-8">
+          <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">Referral Analytics</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Referred</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{totalReferred}</p>
+                <p className="mt-1 text-xs text-muted-foreground">users who signed up via referral</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Rewards Paid</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{totalRewardAmount}</p>
+                <p className="mt-1 text-xs text-muted-foreground">connects awarded to referrers</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Referrers</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-3xl font-bold">{uniqueReferrers}</p>
+                <p className="mt-1 text-xs text-muted-foreground">users who referred someone</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
       {/* Invoices */}
       {totalInvoices > 0 && (
         <div className="mb-8">
@@ -584,11 +646,24 @@ export default async function AdminDashboardPage() {
 
       {/* Charts row 1 */}
       <div className="mb-8 grid gap-6 md:grid-cols-2">
-        {/* Monthly Signup Trend */}
+        {/* Monthly Signup Trend by Role */}
         <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">User Growth (Monthly)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Signups by Role (Monthly)</CardTitle>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: '#3b82f6' }} /> Talent</span>
+              <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: '#22c55e' }} /> Client</span>
+            </div>
+          </CardHeader>
           <CardContent>
-            <LineChart data={monthlySignups} height={100} />
+            <GroupedBarChart
+              data={monthlySignupsByRole}
+              series={[
+                { name: 'talent', color: '#3b82f6' },
+                { name: 'client', color: '#22c55e' },
+              ]}
+              height={100}
+            />
           </CardContent>
         </Card>
 
@@ -753,6 +828,7 @@ export default async function AdminDashboardPage() {
             <CardContent className="flex flex-wrap gap-2">
               <Link href="/dashboard/admin/users" className={buttonVariants({ size: 'sm' })}>Manage Users</Link>
               <Link href="/dashboard/admin/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Jobs</Link>
+              <Link href="/dashboard/admin/reviews" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Reviews</Link>
               <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Applications</Link>
               <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Payment Settings</Link>
               <Link href="/dashboard/admin/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Subscriptions</Link>
