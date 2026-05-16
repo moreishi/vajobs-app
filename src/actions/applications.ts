@@ -78,7 +78,7 @@ export async function applyToJob(jobId: string, formData: FormData) {
       where: { applicantId: session.user.id },
     })
     if (applicationCount === 1) {
-      await grantReferralReward(session.user.id, user.referredById, 'talent', 'submitting their first application')
+      await grantReferralReward(session.user.id, user.referredById, 'talent', 'submitting their first application', 10)
     }
   }
 

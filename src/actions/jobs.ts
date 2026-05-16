@@ -57,7 +57,7 @@ export async function createJob(formData: FormData) {
       where: { posterId: session.user.id },
     })
     if (jobCount === 1) {
-      await grantReferralReward(session.user.id, user.referredById, 'client', 'posting their first job')
+      await grantReferralReward(session.user.id, user.referredById, 'client', 'posting their first job', 15)
     }
   }
 

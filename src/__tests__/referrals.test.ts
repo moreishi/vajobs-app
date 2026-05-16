@@ -12,6 +12,12 @@ vi.mock('@/lib/prisma', () => ({
     },
     referralReward: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      count: vi.fn(),
+    },
+    referralMilestone: {
+      findMany: vi.fn(),
       create: vi.fn(),
     },
     connectTransaction: {
@@ -46,8 +52,9 @@ beforeEach(async () => {
 })
 
 describe('grantReferralReward', () => {
-  it('grants 10 connects to both referrer and referee', async () => {
+  it('grants 10 connects to both referrer and referee by default', async () => {
     vi.mocked(prisma.referralReward.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}, {}, {}, {}])
 
     await grantReferralReward('referee-id', 'referrer-id', 'talent', 'submitting their first application')
@@ -60,6 +67,22 @@ describe('grantReferralReward', () => {
       },
     })
     expect(prisma.$transaction).toHaveBeenCalled()
+  })
+
+  it('uses provided amount when specified', async () => {
+    vi.mocked(prisma.referralReward.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}, {}, {}, {}])
+
+    await grantReferralReward('referee-id', 'referrer-id', 'client', 'posting their first job', 15)
+
+    expect(prisma.referralReward.create).toHaveBeenCalledWith({
+      data: {
+        referrerId: 'referrer-id',
+        refereeId: 'referee-id',
+        amount: 15,
+      },
+    })
   })
 
   it('returns early when reward already exists', async () => {
@@ -78,6 +101,7 @@ describe('grantReferralReward', () => {
 
   it('creates notifications for both parties', async () => {
     vi.mocked(prisma.referralReward.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
     vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}, {}, {}, {}])
 
     await grantReferralReward('referee-id', 'referrer-id', 'talent', 'submitting their first application')
@@ -89,6 +113,73 @@ describe('grantReferralReward', () => {
     expect(createNotification).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'referrer-id', type: 'referral_reward' })
     )
+  })
+})
+
+describe('checkAndGrantMilestoneBonuses', () => {
+  let checkAndGrantMilestoneBonuses: typeof import('@/actions/referrals').checkAndGrantMilestoneBonuses
+
+  beforeEach(async () => {
+    const mod = await import('@/actions/referrals')
+    checkAndGrantMilestoneBonuses = mod.checkAndGrantMilestoneBonuses
+  })
+
+  it('grants bonus for milestone 3 when referrer has 3 rewards', async () => {
+    vi.mocked(prisma.referralReward.count).mockResolvedValueOnce(3)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}, {}])
+
+    await checkAndGrantMilestoneBonuses('referrer-id')
+
+    expect(prisma.referralMilestone.create).toHaveBeenCalledWith({
+      data: { referrerId: 'referrer-id', milestone: 3, bonus: 20 },
+    })
+    expect(prisma.$transaction).toHaveBeenCalled()
+  })
+
+  it('grants bonus for milestones 3, 5, and 10 when all are reached', async () => {
+    vi.mocked(prisma.referralReward.count).mockResolvedValueOnce(12)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.$transaction).mockResolvedValue([{}, {}, {}])
+
+    await checkAndGrantMilestoneBonuses('referrer-id')
+
+    expect(prisma.referralMilestone.create).toHaveBeenCalledTimes(3)
+    expect(prisma.referralMilestone.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ milestone: 3, bonus: 20 }) }),
+    )
+    expect(prisma.referralMilestone.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ milestone: 5, bonus: 50 }) }),
+    )
+    expect(prisma.referralMilestone.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ milestone: 10, bonus: 100 }) }),
+    )
+  })
+
+  it('skips already-claimed milestones', async () => {
+    vi.mocked(prisma.referralReward.count).mockResolvedValueOnce(5)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([
+      { id: 'm1', referrerId: 'referrer-id', milestone: 3, bonus: 20, createdAt: new Date() },
+    ])
+
+    await checkAndGrantMilestoneBonuses('referrer-id')
+
+    // Only milestone 5 should be granted (3 was already claimed)
+    expect(prisma.referralMilestone.create).toHaveBeenCalledTimes(1)
+    expect(prisma.referralMilestone.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ milestone: 5, bonus: 50 }),
+      }),
+    )
+  })
+
+  it('does nothing when no milestones are reached', async () => {
+    vi.mocked(prisma.referralReward.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
+
+    await checkAndGrantMilestoneBonuses('referrer-id')
+
+    expect(prisma.$transaction).not.toHaveBeenCalled()
   })
 })
 
@@ -151,6 +242,86 @@ describe('getReferralConversionStats', () => {
       pending: 5,
       conversionRate: 29,
     })
+  })
+})
+
+describe('getReferralRewardsHistory', () => {
+  let getReferralRewardsHistory: typeof import('@/actions/referrals').getReferralRewardsHistory
+
+  beforeEach(async () => {
+    const mod = await import('@/actions/referrals')
+    getReferralRewardsHistory = mod.getReferralRewardsHistory
+  })
+
+  it('returns rewards with referee info for the referrer', async () => {
+    vi.mocked(prisma.referralReward.findMany).mockResolvedValueOnce([
+      {
+        id: 'r1',
+        amount: 10,
+        createdAt: new Date('2026-05-01'),
+        referee: { name: 'Jane Doe', email: 'jane@test.com' },
+      },
+      {
+        id: 'r2',
+        amount: 15,
+        createdAt: new Date('2026-05-10'),
+        referee: { name: null, email: 'bob@test.com' },
+      },
+    ] as any)
+
+    const result = await getReferralRewardsHistory('referrer-id')
+
+    expect(prisma.referralReward.findMany).toHaveBeenCalledWith({
+      where: { referrerId: 'referrer-id' },
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        referee: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    expect(result).toHaveLength(2)
+    expect(result[0].refereeName).toBe('Jane Doe')
+    expect(result[0].refereeEmail).toBe('jane@test.com')
+    expect(result[1].refereeName).toBe('bob@test.com')
+    expect(result[1].refereeEmail).toBe('bob@test.com')
+  })
+
+  it('returns milestone bonuses alongside referral rewards', async () => {
+    vi.mocked(prisma.referralReward.findMany).mockResolvedValueOnce([
+      {
+        id: 'r1',
+        amount: 10,
+        createdAt: new Date('2026-05-01'),
+        referee: { name: 'Jane Doe', email: 'jane@test.com' },
+      },
+    ] as any)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([
+      {
+        id: 'm1',
+        milestone: 3,
+        bonus: 20,
+        createdAt: new Date('2026-05-15'),
+      },
+    ] as any)
+
+    const result = await getReferralRewardsHistory('referrer-id')
+
+    // Should return both the reward and the milestone bonus
+    expect(result).toHaveLength(2)
+    expect(result[0].type).toBe('milestone')
+    expect(result[0].amount).toBe(20)
+    expect(result[0].label).toBe('3 referrals milestone')
+  })
+
+  it('returns empty array when no history exists', async () => {
+    vi.mocked(prisma.referralReward.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
+
+    const result = await getReferralRewardsHistory('referrer-id')
+
+    expect(result).toEqual([])
   })
 })
 

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ReferralInviteForm } from '@/components/dashboard/referral-invite-form'
 import { getReferralConversionStats } from '@/lib/referrals'
+import { getReferralRewardsHistory } from '@/actions/referrals'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,7 @@ export default async function ReferralsPage() {
 
   const userId = session.user.id
 
-  const [user, referredUsers, rewardAgg] = await Promise.all([
+  const [user, referredUsers, rewardAgg, rewardHistory] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { referralCode: true },
@@ -38,6 +39,7 @@ export default async function ReferralsPage() {
       where: { referrerId: userId },
       _sum: { amount: true },
     }),
+    getReferralRewardsHistory(userId),
   ])
 
   const totalEarnings = rewardAgg._sum.amount ?? 0
@@ -113,6 +115,44 @@ export default async function ReferralsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Rewards History */}
+      {rewardHistory.length > 0 && (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Rewards History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {rewardHistory.map((entry) => (
+                <div key={entry.id} className="flex items-start gap-3">
+                  <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                    {entry.type === 'milestone' ? 'M' : 'R'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {entry.type === 'referral' ? (
+                      <>
+                        <p className="text-sm font-medium">
+                          {entry.refereeName || entry.refereeEmail}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{entry.label}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium">{entry.label}</p>
+                        <p className="text-xs text-muted-foreground">Milestone bonus</p>
+                      </>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-sm font-medium text-green-600 dark:text-green-400">
+                    +{entry.amount} connects
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </>
   )
 }

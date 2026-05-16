@@ -31,7 +31,7 @@ export function ReferralCard({ referralCode, referralEarnings, baseUrl, conversi
       <CardHeader><CardTitle>Referral Program</CardTitle></CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Share your referral link and earn <strong>10 connects</strong> for each friend who signs up and completes their first action!
+          Share your referral link and earn <strong>connects</strong> for each friend who signs up and completes their first action!
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
           <code className="rounded border bg-muted px-3 py-2 text-sm font-mono text-center sm:text-left flex-1">

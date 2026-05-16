@@ -31,6 +31,7 @@ export async function grantReferralReward(
   referrerId: string,
   _refereeRole: string,
   triggerLabel: string,
+  amount = REFERRAL_REWARD_AMOUNT,
 ) {
   const existing = await prisma.referralReward.findUnique({
     where: { referrerId_refereeId: { referrerId, refereeId } },
@@ -42,21 +43,21 @@ export async function grantReferralReward(
       data: {
         referrerId,
         refereeId,
-        amount: REFERRAL_REWARD_AMOUNT,
+        amount,
       },
     }),
     prisma.user.update({
       where: { id: refereeId },
-      data: { connects: { increment: REFERRAL_REWARD_AMOUNT } },
+      data: { connects: { increment: amount } },
     }),
     prisma.user.update({
       where: { id: referrerId },
-      data: { connects: { increment: REFERRAL_REWARD_AMOUNT } },
+      data: { connects: { increment: amount } },
     }),
     prisma.connectTransaction.create({
       data: {
         userId: refereeId,
-        amount: REFERRAL_REWARD_AMOUNT,
+        amount,
         type: 'referral',
         description: `Referral bonus for ${triggerLabel}`,
       },
@@ -64,7 +65,7 @@ export async function grantReferralReward(
     prisma.connectTransaction.create({
       data: {
         userId: referrerId,
-        amount: REFERRAL_REWARD_AMOUNT,
+        amount,
         type: 'referral',
         description: `Referral bonus — someone you referred earned it by ${triggerLabel}`,
       },
@@ -75,7 +76,7 @@ export async function grantReferralReward(
     userId: refereeId,
     type: 'referral_reward',
     title: 'Referral Bonus Earned!',
-    body: `You earned ${REFERRAL_REWARD_AMOUNT} connects for ${triggerLabel}.`,
+    body: `You earned ${amount} connects for ${triggerLabel}.`,
     link: '/dashboard/connects',
   })
 
@@ -83,9 +84,116 @@ export async function grantReferralReward(
     userId: referrerId,
     type: 'referral_reward',
     title: 'Referral Bonus Earned!',
-    body: `Someone you referred earned you ${REFERRAL_REWARD_AMOUNT} connects by ${triggerLabel}.`,
+    body: `Someone you referred earned you ${amount} connects by ${triggerLabel}.`,
     link: '/dashboard/connects',
   })
+
+  await checkAndGrantMilestoneBonuses(referrerId)
+}
+
+const MILESTONE_DEFINITIONS = [
+  { threshold: 3, bonus: 20, label: '3 referrals' },
+  { threshold: 5, bonus: 50, label: '5 referrals' },
+  { threshold: 10, bonus: 100, label: '10 referrals' },
+]
+
+export async function checkAndGrantMilestoneBonuses(referrerId: string) {
+  const totalRewards = await prisma.referralReward.count({
+    where: { referrerId },
+  })
+
+  const claimed = await prisma.referralMilestone.findMany({
+    where: { referrerId },
+    select: { milestone: true },
+  })
+  const claimedSet = new Set(claimed.map((c) => c.milestone))
+
+  const reached = MILESTONE_DEFINITIONS.filter(
+    (m) => totalRewards >= m.threshold && !claimedSet.has(m.threshold),
+  )
+
+  if (reached.length === 0) return
+
+  for (const milestone of reached) {
+    await prisma.$transaction([
+      prisma.referralMilestone.create({
+        data: { referrerId, milestone: milestone.threshold, bonus: milestone.bonus },
+      }),
+      prisma.user.update({
+        where: { id: referrerId },
+        data: { connects: { increment: milestone.bonus } },
+      }),
+      prisma.connectTransaction.create({
+        data: {
+          userId: referrerId,
+          amount: milestone.bonus,
+          type: 'referral',
+          description: `Milestone bonus: reached ${milestone.label}!`,
+        },
+      }),
+    ])
+
+    await createNotification({
+      userId: referrerId,
+      type: 'referral_reward',
+      title: 'Referral Milestone Reached!',
+      body: `You reached ${milestone.label} and earned ${milestone.bonus} bonus connects!`,
+      link: '/dashboard/referrals',
+    })
+  }
+}
+
+export interface RewardHistoryEntry {
+  id: string
+  type: 'referral' | 'milestone'
+  amount: number
+  label: string
+  refereeName: string | null
+  refereeEmail: string | null
+  createdAt: Date
+}
+
+export async function getReferralRewardsHistory(referrerId: string): Promise<RewardHistoryEntry[]> {
+  const [rewards, milestones] = await Promise.all([
+    prisma.referralReward.findMany({
+      where: { referrerId },
+      select: {
+        id: true,
+        amount: true,
+        createdAt: true,
+        referee: { select: { name: true, email: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.referralMilestone.findMany({
+      where: { referrerId },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ])
+
+  const entries: RewardHistoryEntry[] = [
+    ...rewards.map((r) => ({
+      id: r.id,
+      type: 'referral' as const,
+      amount: r.amount,
+      label: `Referral reward`,
+      refereeName: r.referee.name,
+      refereeEmail: r.referee.email,
+      createdAt: r.createdAt,
+    })),
+    ...milestones.map((m) => ({
+      id: m.id,
+      type: 'milestone' as const,
+      amount: m.bonus,
+      label: `${m.milestone} referrals milestone`,
+      refereeName: null as string | null,
+      refereeEmail: null as string | null,
+      createdAt: m.createdAt,
+    })),
+  ]
+
+  entries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  return entries
 }
 
 export async function sendReferralInvite(
