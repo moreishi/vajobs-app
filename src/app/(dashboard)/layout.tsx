@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { NotificationBell } from '@/components/notifications/notification-bell'
+import { TimezoneSetter } from '@/components/ui/timezone-setter'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -8,6 +9,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-muted/20 to-background">
+      <TimezoneSetter timezone={timezone} />
       <DashboardHeader
         userEmail={session?.user?.email}
         notificationBell={<NotificationBell />}
@@ -15,11 +17,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
         {children}
       </main>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `document.documentElement.dataset.timezone='${timezone}'`,
-        }}
-      />
     </div>
   )
 }
