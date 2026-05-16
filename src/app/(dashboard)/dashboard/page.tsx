@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
 import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
+import { ReferralCard } from '@/components/dashboard/referral-card'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -46,10 +47,10 @@ export default async function DashboardPage() {
   }
 
   if (role === 'talent') {
-    const [u, pendingApps, interviews, acceptedApps] = await Promise.all([
+    const [u, pendingApps, interviews, acceptedApps, referralEarnings] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { connects: true },
+        select: { connects: true, referralCode: true },
       }),
       prisma.application.count({
         where: { applicantId: userId, status: { in: ['pending', 'reviewed'] } },
@@ -60,8 +61,14 @@ export default async function DashboardPage() {
       prisma.application.count({
         where: { applicantId: userId, status: 'accepted' },
       }),
+      prisma.referralReward.aggregate({
+        where: { referrerId: userId },
+        _sum: { amount: true },
+      }),
     ])
     const connects = u?.connects ?? 0
+    const referralCode = u?.referralCode
+    const totalReferralEarnings = referralEarnings._sum.amount ?? 0
 
     return (
       <>
@@ -101,12 +108,22 @@ export default async function DashboardPage() {
             <Link href="/dashboard/va-subscription" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Membership</Link>
           </CardContent>
         </Card>
+
+        {referralCode && (
+          <div className="mb-8">
+            <ReferralCard
+              referralCode={referralCode}
+              referralEarnings={totalReferralEarnings}
+              baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+            />
+          </div>
+        )}
       </>
     )
   }
 
   // ── Client / Admin dashboard ──
-  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned, activeSubscription] = await Promise.all([
+  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned, activeSubscription, currentUser, referralEarnings] = await Promise.all([
     prisma.jobPost.findMany({
       where: { posterId: userId },
       select: { id: true, title: true, status: true, createdAt: true, _count: { select: { applications: true } } },
@@ -171,7 +188,17 @@ export default async function DashboardPage() {
       include: { plan: true },
       orderBy: { createdAt: 'desc' },
     }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { referralCode: true },
+    }),
+    prisma.referralReward.aggregate({
+      where: { referrerId: userId },
+      _sum: { amount: true },
+    }),
   ])
+  const clientReferralCode = currentUser?.referralCode
+  const totalClientReferralEarnings = referralEarnings._sum.amount ?? 0
 
   const activeJobs = jobPosts.filter(j => j.status === 'open').length
   const totalConnectsEarned = connectsEarned._sum.biddingConnects ?? 0
@@ -370,6 +397,16 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {clientReferralCode && (
+        <div className="mb-8">
+          <ReferralCard
+            referralCode={clientReferralCode}
+            referralEarnings={totalClientReferralEarnings}
+            baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+          />
+        </div>
       )}
     </>
   )

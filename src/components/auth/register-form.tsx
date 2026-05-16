@@ -9,10 +9,17 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
+function getRefFromUrl(): string {
+  if (typeof window === 'undefined') return ''
+  const params = new URLSearchParams(window.location.search)
+  return params.get('ref') || ''
+}
+
 export function RegisterForm() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [referralCode, setReferralCode] = useState(getRefFromUrl)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -103,7 +110,7 @@ export function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="referralCode">Referral Code (optional)</Label>
-            <Input id="referralCode" name="referralCode" placeholder="Enter referral code" />
+            <Input id="referralCode" name="referralCode" value={referralCode} onChange={e => setReferralCode(e.target.value)} placeholder="Enter referral code" />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading || !selectedRole}>
