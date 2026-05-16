@@ -11,7 +11,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 - **Payments:** Stripe, PayPal, Wise (+ HitPay, Xendit, Maya) via strategy pattern
 - **Real-time:** Server-Sent Events (SSE) for live chat, polls as fallback
 - **Email:** Resend via background worker queue
-- **Testing:** Vitest (327+ unit tests) + Playwright (E2E)
+- **Testing:** Vitest (364+ unit tests) + Playwright (E2E)
 - **Styling:** Tailwind CSS 4 + shadcn/ui
 
 ## Features
@@ -108,13 +108,19 @@ npm run seed
 npm run dev
 ```
 
-### Default Accounts (after seeding)
+### Default Accounts (after dev seeding)
 
 | Role   | Email                 | Password |
 | ------ | --------------------- | -------- |
 | Admin  | admin@vajobs.online   | password |
-| Client | client@example.com    | password |
-| Talent | talent@example.com    | password |
+| Client | client1@vajobs.online | password |
+| Client | client2@vajobs.online | password |
+| Client | client3@vajobs.online | password |
+| Talent | talent1@vajobs.online | password |
+| Talent | talent2@vajobs.online | password |
+| Talent | talent3@vajobs.online | password |
+
+**Production seeding** generates a random 48-character admin password (printed to logs and emailed via Resend). Test users and demo job posts are not created in production.
 
 ### Seeded subscription plans
 
@@ -234,6 +240,8 @@ AUTH_URL="https://your-domain.com"
 
 **Seed the production database:** Set `FORCE_SEED=true` in the environment and restart. The seed is skipped in production by default (the DB has real data). Once seeded, remove the variable.
 
+**Production seed behavior:** A random 48-character admin password is generated, printed to the startup logs, and sent via email to `admin@vajobs.online` when `RESEND_API_KEY` and `EMAIL_FROM` are configured. Only the admin user, subscription plans, and payment settings are created — no test users or demo jobs.
+
 ### Option 2: Coolify
 
 Deploy as a Docker Compose stack on your own server.
@@ -249,7 +257,7 @@ Deploy as a Docker Compose stack on your own server.
    - `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` — optional
    - Payment provider credential sets — optional
 4. Deploy — Coolify builds the Docker image and serves the app
-5. **First deploy only:** Set `FORCE_SEED=true` and redeploy to seed the database, then remove the variable
+5. **First deploy only:** Set `FORCE_SEED=true` and redeploy to seed the database (generates secure admin password, emails it, no test data), then remove the variable
 
 ### Option 3: Vercel (Serverless)
 
@@ -299,7 +307,7 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `AUTH_SECRET` | Yes | — | NextAuth secret (`openssl rand -hex 32`) |
 | `AUTH_URL` | No | `http://localhost:3000` | App URL for email links and callbacks |
 | `NEXT_PUBLIC_URL` | No | `https://vajobs.online` | Base URL for sitemap generation |
-| `FORCE_SEED` | No | — | Set to `true` to run seed in production (e.g., Coolify first deploy) |
+| `FORCE_SEED` | No | — | Set to `true` to run seed in production (generates secure admin password, emails it if RESEND_API_KEY + EMAIL_FROM set, skips test data) |
 | `CRON_SECRET` | No | — | Secret for subscription renewal cron endpoint |
 | `AUTH_GOOGLE_ID` | No | — | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | No | — | Google OAuth client secret |
@@ -328,7 +336,7 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `npm start` | Start production server |
 | `npm test` | Run unit test suite (Vitest, 327+ tests) |
 | `npm run test:e2e` | Run E2E tests (Playwright) — starts dev server automatically |
-| `npm run seed` | Generate dev Prisma client then seed database with sample data |
+| `npm run seed` | Generate dev Prisma client then seed database with sample data (test users, demo jobs). In production (FORCE_SEED=true), creates only admin with secure password + infrastructure data |
 | `npx prisma migrate dev --schema=prisma/schema.dev.prisma` | Run dev migration |
 | `npx prisma migrate deploy` | Run production migration |
 | `npx prisma generate --schema=prisma/schema.dev.prisma` | Generate dev Prisma client |
