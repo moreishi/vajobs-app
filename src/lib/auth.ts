@@ -26,6 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!user || !user.password) return null
+        if (user.banned) return null
 
         const isValid = await compare(
           credentials.password as string,
@@ -43,6 +44,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      if (user?.id) {
+        const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+        if (dbUser?.banned) return false
+      }
+      return true
+    },
     jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id

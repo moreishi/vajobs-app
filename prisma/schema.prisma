@@ -17,6 +17,7 @@ model User {
   lastConnectsReset DateTime?
   emailVerified    DateTime?
   image            String?
+  banned           Boolean   @default(false)
   accounts         Account[]
   sessions         Session[]
   jobPosts         JobPost[]
