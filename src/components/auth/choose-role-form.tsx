@@ -16,7 +16,7 @@ export function ChooseRoleForm() {
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="role" value={selected} />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <button
           type="button"
           onClick={() => setSelected('client')}
