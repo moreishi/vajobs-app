@@ -74,7 +74,7 @@ export default async function DashboardPage() {
       <>
         <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
 
-        <div className="grid gap-4 sm:grid-cols-4 mb-8">
+        <div className="grid gap-4 sm:grid-cols-5 mb-8">
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Connects Balance</CardTitle></CardHeader>
             <CardContent><p className="text-3xl font-bold">{connects}</p></CardContent>
@@ -91,6 +91,10 @@ export default async function DashboardPage() {
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Hired</CardTitle></CardHeader>
             <CardContent><p className="text-3xl font-bold">{acceptedApps}</p></CardContent>
           </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Referral Earnings</CardTitle></CardHeader>
+            <CardContent><p className="text-3xl font-bold text-green-600 dark:text-green-400">+{totalReferralEarnings}</p></CardContent>
+          </Card>
         </div>
 
         <Card>
@@ -103,6 +107,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/engagements" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Engagements</Link>
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
+            <Link href="/dashboard/referrals" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Referrals</Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Jobs</Link>
             <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
             <Link href="/dashboard/va-subscription" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Membership</Link>
@@ -208,7 +213,7 @@ export default async function DashboardPage() {
       <h1 className="mb-8 text-2xl font-bold">Dashboard</h1>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4 mb-8">
+      <div className="grid gap-4 sm:grid-cols-5 mb-8">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Jobs</CardTitle></CardHeader>
           <CardContent><p className="text-3xl font-bold">{activeJobs}</p></CardContent>
@@ -224,6 +229,10 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Connects Received</CardTitle></CardHeader>
           <CardContent><p className="text-3xl font-bold">{totalConnectsEarned}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Referral Earnings</CardTitle></CardHeader>
+          <CardContent><p className="text-3xl font-bold text-green-600 dark:text-green-400">+{totalClientReferralEarnings}</p></CardContent>
         </Card>
       </div>
 
@@ -257,6 +266,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard/client-profile" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit Profile</Link>
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
+            <Link href="/dashboard/referrals" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Referrals</Link>
             <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Membership</Link>
             <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
             {role === 'admin' && (

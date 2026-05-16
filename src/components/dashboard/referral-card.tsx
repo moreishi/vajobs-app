@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 
 interface ReferralCardProps {
   referralCode: string
@@ -35,9 +35,17 @@ export function ReferralCard({ referralCode, referralEarnings, baseUrl }: Referr
           <code className="flex-1 rounded border bg-muted px-3 py-2 text-sm font-mono">
             {referralCode}
           </code>
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            {copied ? 'Copied!' : 'Copy Link'}
-          </Button>
+          <div className="flex gap-1">
+            <Button variant="outline" size="sm" onClick={handleCopy}>
+              {copied ? 'Copied!' : 'Copy Link'}
+            </Button>
+            <a
+              href={`mailto:?subject=Join%20me%20on%20VA%20Jobs%20Online&body=Sign%20up%20using%20my%20referral%20link%3A%20${encodeURIComponent(shareLink)}`}
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              Share
+            </a>
+          </div>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
           <span className="text-sm text-muted-foreground">Connects earned from referrals</span>
