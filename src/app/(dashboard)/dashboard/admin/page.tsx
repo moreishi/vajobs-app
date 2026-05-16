@@ -80,6 +80,11 @@ export default async function AdminDashboardPage() {
     invoiceCounts,
     paidInvoices,
     pendingInvoices,
+
+    vaActiveSubs,
+    vaNewSubsLast30,
+    vaCancelledLast30,
+    vaEndingWithin30d,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.groupBy({ by: ['role'], _count: true }),
@@ -166,6 +171,21 @@ export default async function AdminDashboardPage() {
     prisma.invoice.findMany({
       where: { status: 'pending' },
       select: { amount: true, dueDate: true },
+    }),
+
+    // VA subscription analytics
+    prisma.vaSubscription.findMany({
+      where: { status: 'active' },
+      include: { plan: true },
+    }),
+    prisma.vaSubscription.count({
+      where: { createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.vaSubscription.count({
+      where: { status: 'cancelled', updatedAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.vaSubscription.count({
+      where: { status: 'active', endDate: { lte: thirtyDaysAgo, gte: new Date() } },
     }),
   ])
 
@@ -314,6 +334,12 @@ export default async function AdminDashboardPage() {
   const mrr = activeSubs.reduce((sum, s) => sum + s.plan.priceInCents, 0)
   const churnRate = activeSubs.length > 0
     ? Math.round((cancelledLast30 / (activeSubs.length + cancelledLast30)) * 100)
+    : 0
+
+  // VA subscription analytics
+  const vaMrr = vaActiveSubs.reduce((sum, s) => sum + s.plan.priceInCents, 0)
+  const vaChurnRate = vaActiveSubs.length > 0
+    ? Math.round((vaCancelledLast30 / (vaActiveSubs.length + vaCancelledLast30)) * 100)
     : 0
 
   // Plan distribution
@@ -478,6 +504,44 @@ export default async function AdminDashboardPage() {
             <CardContent>
               <p className="text-3xl font-bold">{endingWithin30d}</p>
               <p className="mt-1 text-xs text-muted-foreground">subscriptions ending within 30d</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* VA Subscriptions */}
+      <div className="mb-8">
+        <h2 className="mb-4 text-sm font-semibold text-muted-foreground uppercase tracking-wide">VA Subscriptions</h2>
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">VA MRR</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">${(vaMrr / 100).toFixed(2)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">monthly recurring revenue</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active VA Subs</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{vaActiveSubs.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">New / Churn (30d)</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">
+                <span className="text-green-600 dark:text-green-400">+{vaNewSubsLast30}</span>
+                <span className="text-muted-foreground mx-1">/</span>
+                <span className="text-destructive">-{vaCancelledLast30}</span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{vaChurnRate}% churn rate</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">At Risk</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{vaEndingWithin30d}</p>
+              <p className="mt-1 text-xs text-muted-foreground">VA subs ending within 30d</p>
             </CardContent>
           </Card>
         </div>
@@ -695,7 +759,6 @@ export default async function AdminDashboardPage() {
               <Link href="/dashboard/admin/va-subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Plans</Link>
               <Link href="/dashboard/admin/email-logs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Email Logs</Link>
               <Link href="/dashboard/admin/referrals" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Referral Analytics</Link>
-              <Link href="/dashboard/admin/users" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Users</Link>
               <Link href="/setup" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Seed Data</Link>
             </CardContent>
           </Card>
