@@ -35,6 +35,7 @@ export function DashboardHeader({ userEmail, notificationBell }: Props) {
     { href: '/dashboard/messages', label: 'Messages' },
     { href: '/dashboard/engagements', label: 'Engagements' },
     { href: '/dashboard/applications', label: 'Applications' },
+    { href: '/dashboard/referrals', label: 'Referrals' },
     { href: '/dashboard/profile', label: 'Profile' },
     { href: '/dashboard/settings', label: 'Settings' },
     { href: '/jobs', label: 'Browse Jobs' },
@@ -71,6 +72,17 @@ export function DashboardHeader({ userEmail, notificationBell }: Props) {
             )}
           >
             Engagements
+          </Link>
+          <Link
+            href="/dashboard/referrals"
+            className={cn(
+              'rounded-full px-3 py-1.5 text-sm transition-colors',
+              pathname.startsWith('/dashboard/referrals')
+                ? 'bg-muted text-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Referrals
           </Link>
           <Link
             href="/jobs"
