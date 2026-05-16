@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import type { NotificationType } from '@/actions/notifications'
+import { defaultEmailEnabled } from '@/lib/notification-defaults'
 
 const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: string }[] = [
   { type: 'application_received', label: 'Application Received', description: 'When someone applies to your job' },
@@ -42,14 +43,14 @@ export async function getNotificationPreferences() {
     where: { userId: session.user.id },
   })
 
-  // Merge defaults — if no preference saved yet, default is email: true
+  // Merge defaults — fall back to per-type default (opt-out for high-frequency types)
   return NOTIFICATION_TYPES.map((nt) => {
     const existing = preferences.find((p) => p.type === nt.type)
     return {
       type: nt.type,
       label: nt.label,
       description: nt.description,
-      email: existing?.email ?? true,
+      email: existing?.email ?? defaultEmailEnabled(nt.type),
     }
   })
 }

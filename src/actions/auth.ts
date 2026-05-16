@@ -7,6 +7,7 @@ import { auth, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { DEFAULT_EMAIL_PREFERENCES } from '@/lib/notification-defaults'
 import type { Role } from '@/types'
 
 export async function signInWithEmail(formData: FormData) {
@@ -68,8 +69,17 @@ export async function signUp(formData: FormData) {
 
   const hashedPassword = await hash(password, 12)
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: { email, password: hashedPassword, role, connects: 50 },
+  })
+
+  // Seed default notification preferences (opt-out for high-frequency types)
+  await prisma.notificationPreference.createMany({
+    data: Object.entries(DEFAULT_EMAIL_PREFERENCES).map(([type, email]) => ({
+      userId: user.id,
+      type,
+      email,
+    })),
   })
 
   if (process.env.RESEND_API_KEY) {

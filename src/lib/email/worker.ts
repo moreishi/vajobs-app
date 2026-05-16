@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { defaultEmailEnabled } from '@/lib/notification-defaults'
 
 type EmailJob = {
   userId: string
@@ -43,7 +44,8 @@ async function processJob(job: EmailJob) {
   const pref = await prisma.notificationPreference.findUnique({
     where: { userId_type: { userId: job.userId, type: job.type } },
   })
-  if (pref?.email === false) return
+  const emailEnabled = pref?.email ?? defaultEmailEnabled(job.type)
+  if (!emailEnabled) return
 
   const cta = job.link
     ? { text: 'View on Talent Hub', url: `${job.baseUrl}${job.link}` }

@@ -12,6 +12,9 @@ vi.mock('@/lib/prisma', () => ({
     jobPost: {
       createMany: vi.fn(),
     },
+    notificationPreference: {
+      createMany: vi.fn(),
+    },
     verificationToken: {
       create: vi.fn(),
       findUnique: vi.fn(),
@@ -139,6 +142,7 @@ describe('signUp', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
+    vi.mocked(prisma.notificationPreference.createMany).mockResolvedValueOnce({ count: 22 })
 
     const { redirect } = await import('next/navigation')
 
@@ -174,6 +178,7 @@ describe('signUp', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
+    vi.mocked(prisma.notificationPreference.createMany).mockResolvedValueOnce({ count: 22 })
     vi.mocked(prisma.verificationToken.create).mockResolvedValueOnce({} as any)
 
     const { sendEmail } = await import('@/lib/email')

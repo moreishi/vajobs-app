@@ -18,10 +18,42 @@ interface JobBlueprint {
 }
 
 const CLIENTS = [
-  { name: 'GrowthAssistant Inc.', email: 'hr@growthassistant.io' },
-  { name: 'Remote Workforce PH', email: 'jobs@remoteworkforce.ph' },
-  { name: 'VA Talent Co.', email: 'talent@vatalent.co' },
+  { name: 'Client One', email: 'client1@vajobs.online' },
+  { name: 'Client Two', email: 'client2@vajobs.online' },
+  { name: 'Client Three', email: 'client3@vajobs.online' },
 ]
+
+const TALENTS = [
+  { name: 'Maria Santos', email: 'talent1@vajobs.online' },
+  { name: 'Juan Dela Cruz', email: 'talent2@vajobs.online' },
+  { name: 'Ana Gonzales', email: 'talent3@vajobs.online' },
+]
+
+// Match the defaults from src/lib/notification-defaults.ts
+const DEFAULT_NOTIFICATION_PREFS: Record<string, boolean> = {
+  application_received: true,
+  status_updated: false,
+  interview_scheduled: true,
+  interview_cancelled: true,
+  message_received: false,
+  review_received: false,
+  engagement_ended: false,
+  connects_purchased: true,
+  payment_completed: true,
+  subscription_cancelled: true,
+  subscription_renewal: true,
+  contract_created: true,
+  contract_signed: true,
+  contract_terminated: true,
+  invoice_received: true,
+  invoice_paid: true,
+  milestone_created: false,
+  milestone_completed: false,
+  milestone_approved: true,
+  milestone_rejected: false,
+  proposal_accepted: true,
+  proposal_updated: false,
+}
 
 const JOB_BLUEPRINTS: JobBlueprint[] = [
   {
@@ -180,7 +212,7 @@ function generateJobs(): GeneratedJob[] {
       shortDescription: `[Experienced] ${bp.shortDescription}`,
       salaryRange: bp.rates.beginner,
       skills: bp.skills,
-      posterIndex: 2,
+      posterIndex: i % 3,
     })
 
     jobs.push({
@@ -188,7 +220,7 @@ function generateJobs(): GeneratedJob[] {
       shortDescription: `[Advanced] ${bp.shortDescription}`,
       salaryRange: bp.rates.experienced,
       skills: bp.skills,
-      posterIndex: 2,
+      posterIndex: (i + 1) % 3,
     })
   }
   return jobs
@@ -210,6 +242,7 @@ async function main() {
   await prisma.application.deleteMany()
   await prisma.savedJob.deleteMany()
   await prisma.notification.deleteMany()
+  await prisma.notificationPreference.deleteMany()
   await prisma.connectTransaction.deleteMany()
   await prisma.jobPost.deleteMany()
   await prisma.profile.deleteMany()
@@ -252,17 +285,34 @@ async function main() {
     console.log(`  Created client: ${c.email} / password`)
   }
 
-  const talent = await prisma.user.create({
-    data: {
-      email: 'talent@example.com',
-      password: pw,
-      role: 'talent',
-      name: 'Maria Santos',
-      emailVerified: now,
-      connects: 50,
-    },
-  })
-  console.log(`  Created talent: talent@example.com / password`)
+  const talentRecords: { id: string; name: string }[] = []
+  for (const t of TALENTS) {
+    const record = await prisma.user.create({
+      data: {
+        email: t.email,
+        password: pw,
+        role: 'talent',
+        name: t.name,
+        emailVerified: now,
+        connects: 50,
+      },
+    })
+    talentRecords.push({ id: record.id, name: t.name })
+    console.log(`  Created talent: ${t.email} / password`)
+  }
+
+  // Seed notification preferences for all users
+  const allUsers = [admin, ...clientRecords, ...talentRecords]
+  for (const u of allUsers) {
+    await prisma.notificationPreference.createMany({
+      data: Object.entries(DEFAULT_NOTIFICATION_PREFS).map(([type, email]) => ({
+        userId: u.id,
+        type,
+        email,
+      })),
+    })
+  }
+  console.log(`  Seeded notification preferences for ${allUsers.length} users`)
 
   const jobs = generateJobs()
   let createdCount = 0
@@ -345,7 +395,7 @@ async function main() {
       autoRenew: true,
     },
   })
-  console.log('  Created active subscription for VA Talent Co.')
+  console.log('  Created active subscription for Client Three')
 
   await prisma.paymentSetting.upsert({
     where: { key: 'active_provider' },
