@@ -1,7 +1,6 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
@@ -20,13 +19,11 @@ export async function completeTalentOnboarding(data: {
 
   try {
     await prisma.$transaction(async (tx) => {
-      // Update user name
       await tx.user.update({
         where: { id: userId },
         data: { name: data.name },
       })
 
-      // Upsert profile
       await tx.profile.upsert({
         where: { userId },
         create: {
@@ -58,7 +55,7 @@ export async function completeTalentOnboarding(data: {
   }
 
   revalidatePath('/dashboard')
-  redirect('/dashboard')
+  return { success: true }
 }
 
 export async function completeClientOnboarding(data: {
@@ -101,7 +98,7 @@ export async function completeClientOnboarding(data: {
   }
 
   revalidatePath('/dashboard')
-  redirect('/dashboard')
+  return { success: true }
 }
 
 export async function skipOnboarding() {

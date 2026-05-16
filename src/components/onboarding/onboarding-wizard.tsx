@@ -42,8 +42,9 @@ export function TalentOnboarding() {
     if (result.error) {
       setError(result.error)
       setLoading(false)
+    } else {
+      window.location.href = '/dashboard'
     }
-    // On success the server action redirects to /dashboard
   }
 
   function toggleSkill(skill: string) {
@@ -224,8 +225,9 @@ export function ClientOnboarding() {
     if (result.error) {
       setError(result.error)
       setLoading(false)
+    } else {
+      window.location.href = '/dashboard'
     }
-    // On success the server action redirects to /dashboard
   }
 
   return (
