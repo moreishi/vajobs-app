@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { PublicHeader } from '@/components/layout/public-header'
 import { PortfolioGallery } from '@/components/portfolio/portfolio-gallery'
 import { TalentBadge } from '@/components/talents/talent-badge'
+import { ReviewSection } from '@/components/reviews/review-section'
 import { computeBadges, type BadgeOptions } from '@/lib/badges'
 
 export const metadata = {
@@ -147,47 +148,7 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
 
         {/* Reviews */}
         <div className="mt-8">
-          <div className="mb-4 flex items-baseline gap-3">
-            <h2 className="text-lg font-semibold">Reviews</h2>
-            {rating.count > 0 && (
-              <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                <span className="text-yellow-500">{'★'.repeat(Math.round(rating.average))}{'☆'.repeat(5 - Math.round(rating.average))}</span>
-                {rating.average.toFixed(1)} ({rating.count})
-              </span>
-            )}
-          </div>
-
-          {reviews.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No reviews yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {reviews.map((review) => (
-                <Card key={review.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                            {review.reviewer.name?.[0]?.toUpperCase() || review.reviewer.email[0].toUpperCase()}
-                          </div>
-                          <span className="text-sm font-medium">{review.reviewer.name || review.reviewer.email}</span>
-                        </div>
-                        <div className="mt-1 text-yellow-500 text-sm">
-                          {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {review.comment && (
-                      <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <ReviewSection reviews={reviews} rating={rating} />
         </div>
       </main>
     </div>
