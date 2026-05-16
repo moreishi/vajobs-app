@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { updateAccount } from '@/actions/auth'
@@ -44,9 +44,11 @@ export function SettingsForm({ name, email, timezone }: SettingsFormProps) {
   const { update } = useSession()
   const [state, action, pending] = useActionState(updateAccount, { error: '' })
   const [selectedTz, setSelectedTz] = useState(timezone)
+  const updatedRef = useRef(false)
 
   useEffect(() => {
-    if (state.success) {
+    if (state.success && !updatedRef.current) {
+      updatedRef.current = true
       update({ timezone: selectedTz })
     }
   }, [state.success, selectedTz, update])
