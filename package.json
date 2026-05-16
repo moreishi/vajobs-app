@@ -13,7 +13,8 @@
     "db:generate": "prisma generate --schema=prisma/schema.dev.prisma",
     "db:migrate": "prisma migrate dev --schema=prisma/schema.dev.prisma",
     "db:seed": "prisma db seed --schema=prisma/schema.dev.prisma",
-    "seed": "prisma generate --schema=prisma/schema.dev.prisma && tsx prisma/seed.ts"
+    "seed": "prisma generate --schema=prisma/schema.dev.prisma && tsx prisma/seed.ts",
+    "seed:demo": "tsx prisma/seed-demo.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",

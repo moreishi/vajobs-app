@@ -103,6 +103,8 @@ npx prisma generate --schema=prisma/schema.dev.prisma
 npx prisma migrate dev --schema=prisma/schema.dev.prisma
 # This seeds the database automatically. Re-run anytime:
 npm run seed
+# Optional: add demo accounts and sample job posts:
+npm run seed:demo
 
 # 4. Start dev server
 npm run dev
@@ -240,7 +242,7 @@ AUTH_URL="https://your-domain.com"
 
 **Seed the production database:** Set `FORCE_SEED=true` in the environment and restart. The seed is skipped in production by default (the DB has real data). Once seeded, remove the variable.
 
-**Production seed behavior:** A random 48-character admin password is generated, printed to the startup logs, and sent via email to `admin@vajobs.online` when `RESEND_API_KEY` and `EMAIL_FROM` are configured. Only the admin user, subscription plans, and payment settings are created — no test users or demo jobs.
+**Production seed behavior:** A random 48-character admin password is generated, printed to the startup logs, and sent via email to `admin@vajobs.online` when `RESEND_API_KEY` and `EMAIL_FROM` are configured. Only infrastructure is created (admin, subscription plans, payment settings). Demo accounts and jobs are never seeded in production.
 
 ### Option 2: Coolify
 
@@ -336,7 +338,8 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `npm start` | Start production server |
 | `npm test` | Run unit test suite (Vitest, 327+ tests) |
 | `npm run test:e2e` | Run E2E tests (Playwright) — starts dev server automatically |
-| `npm run seed` | Generate dev Prisma client then seed database with sample data (test users, demo jobs). In production (FORCE_SEED=true), creates only admin with secure password + infrastructure data |
+| `npm run seed` | Generate dev Prisma client then seed infrastructure (admin, subscription plans, payment settings) |
+| `npm run seed:demo` | Add demo accounts (3 clients, 3 talents) and 30 sample job posts — run after `npm run seed` |
 | `npx prisma migrate dev --schema=prisma/schema.dev.prisma` | Run dev migration |
 | `npx prisma migrate deploy` | Run production migration |
 | `npx prisma generate --schema=prisma/schema.dev.prisma` | Generate dev Prisma client |
