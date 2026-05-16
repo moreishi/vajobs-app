@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/public/uploads
     environment:
       # Database
       - DATABASE_URL=${DATABASE_URL}
@@ -37,3 +39,6 @@ services:
       - MAYA_PUBLIC_KEY=${MAYA_PUBLIC_KEY}
       - MAYA_SECRET_KEY=${MAYA_SECRET_KEY}
       - MAYA_SANDBOX=${MAYA_SANDBOX}
+
+volumes:
+  uploads:
