@@ -51,5 +51,6 @@ export const logger = {
   },
   error(label: string, message: string, meta?: unknown) {
     write('ERROR', label, message, meta)
+    console.error(`[${label}] ${message}`, meta ?? '')
   },
 }

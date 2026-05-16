@@ -27,7 +27,7 @@ export function AcceptProposalButton({ applicationId }: { applicationId: string 
   return (
     <div className="space-y-2">
       <Button onClick={handleAccept} disabled={isLoading} className="w-full sm:w-auto">
-        {isLoading ? 'Creating Engagement...' : 'Accept Proposal & Create Contract'}
+        {isLoading ? 'Creating...' : 'Accept'}
       </Button>
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>

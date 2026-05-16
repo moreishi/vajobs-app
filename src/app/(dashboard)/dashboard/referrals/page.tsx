@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ReferralCard } from '@/components/dashboard/referral-card'
+import { ReferralInviteForm } from '@/components/dashboard/referral-invite-form'
+import { getReferralConversionStats } from '@/lib/referrals'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +42,7 @@ export default async function ReferralsPage() {
 
   const totalEarnings = rewardAgg._sum.amount ?? 0
   const rewardedCount = referredUsers.filter(u => u.referralRewardsReceived.length > 0).length
+  const conversionStats = getReferralConversionStats(referredUsers)
 
   return (
     <>
@@ -48,12 +51,25 @@ export default async function ReferralsPage() {
       </Link>
       <h1 className="mb-8 text-2xl font-bold">Referrals</h1>
 
+      {/* Invite by Email */}
+      <Card className="mb-8">
+        <CardHeader className="pb-3">
+          <CardTitle>Invite by Email</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ReferralInviteForm
+            baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+          />
+        </CardContent>
+      </Card>
+
       {user?.referralCode && (
         <div className="mb-8">
           <ReferralCard
             referralCode={user.referralCode}
             referralEarnings={totalEarnings}
             baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+            conversionStats={conversionStats}
           />
         </div>
       )}

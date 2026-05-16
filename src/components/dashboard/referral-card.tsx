@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button, buttonVariants } from '@/components/ui/button'
+import type { ReferralConversionStats } from '@/lib/referrals'
 
 interface ReferralCardProps {
   referralCode: string
   referralEarnings: number
   baseUrl: string
+  conversionStats?: ReferralConversionStats
 }
 
-export function ReferralCard({ referralCode, referralEarnings, baseUrl }: ReferralCardProps) {
+export function ReferralCard({ referralCode, referralEarnings, baseUrl, conversionStats }: ReferralCardProps) {
   const [copied, setCopied] = useState(false)
   const shareLink = `${baseUrl}/register?ref=${referralCode}`
 
@@ -31,11 +33,11 @@ export function ReferralCard({ referralCode, referralEarnings, baseUrl }: Referr
         <p className="text-sm text-muted-foreground">
           Share your referral link and earn <strong>10 connects</strong> for each friend who signs up and completes their first action!
         </p>
-        <div className="flex items-center gap-2">
-          <code className="flex-1 rounded border bg-muted px-3 py-2 text-sm font-mono">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+          <code className="rounded border bg-muted px-3 py-2 text-sm font-mono text-center sm:text-left flex-1">
             {referralCode}
           </code>
-          <div className="flex gap-1">
+          <div className="flex gap-1 justify-center sm:justify-start">
             <Button variant="outline" size="sm" onClick={handleCopy}>
               {copied ? 'Copied!' : 'Copy Link'}
             </Button>
@@ -51,6 +53,34 @@ export function ReferralCard({ referralCode, referralEarnings, baseUrl }: Referr
           <span className="text-sm text-muted-foreground">Connects earned from referrals</span>
           <span className="text-lg font-bold text-green-600 dark:text-green-400">+{referralEarnings}</span>
         </div>
+        {conversionStats && conversionStats.totalReferrals > 0 && (
+          <div className="space-y-2 rounded-lg border p-3">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Conversion</span>
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <p className="text-lg font-bold">{conversionStats.totalReferrals}</p>
+                <p className="text-xs text-muted-foreground">Referred</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">{conversionStats.converted}</p>
+                <p className="text-xs text-muted-foreground">Converted</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{conversionStats.pending}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-green-500 transition-all"
+                  style={{ width: `${conversionStats.conversionRate}%` }}
+                />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground shrink-0">{conversionStats.conversionRate}%</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

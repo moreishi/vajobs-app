@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
+
+function generateReferralCode(): string {
+  return crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
+}
 
 interface RateTier {
   beginner: string
@@ -250,6 +255,7 @@ async function main() {
         name: c.name,
         emailVerified: now,
         connects: 9999,
+        referralCode: generateReferralCode(),
       },
     })
     clientRecords.push({ id: record.id, name: c.name })
@@ -267,6 +273,7 @@ async function main() {
         name: t.name,
         emailVerified: now,
         connects: 50,
+        referralCode: generateReferralCode(),
       },
     })
     talentRecords.push({ id: record.id })

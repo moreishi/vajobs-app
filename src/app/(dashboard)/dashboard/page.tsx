@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
 import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
 import { ReferralCard } from '@/components/dashboard/referral-card'
+import { ensureReferralCode } from '@/actions/referrals'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -67,7 +68,8 @@ export default async function DashboardPage() {
       }),
     ])
     const connects = u?.connects ?? 0
-    const referralCode = u?.referralCode
+    let referralCode = u?.referralCode
+    if (!referralCode) referralCode = await ensureReferralCode()
     const totalReferralEarnings = referralEarnings._sum.amount ?? 0
 
     return (
@@ -202,7 +204,8 @@ export default async function DashboardPage() {
       _sum: { amount: true },
     }),
   ])
-  const clientReferralCode = currentUser?.referralCode
+  let clientReferralCode = currentUser?.referralCode
+  if (!clientReferralCode) clientReferralCode = await ensureReferralCode()
   const totalClientReferralEarnings = referralEarnings._sum.amount ?? 0
 
   const activeJobs = jobPosts.filter(j => j.status === 'open').length
@@ -355,10 +358,10 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Link
-                        href={`/dashboard/applications?jobId=${job.id}`}
+                        href={`/dashboard/jobs/${job.id}/proposals`}
                         className={buttonVariants({ variant: 'ghost', size: 'sm' })}
                       >
-                        Apps
+                        Proposals
                       </Link>
                       <Link
                         href={`/dashboard/jobs/${job.id}/edit`}
