@@ -84,9 +84,10 @@ export async function signUp(formData: FormData) {
 
   const hashedPassword = await hash(password, 12)
   const userReferralCode = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
+  const timezone = (formData.get('timezone') as string)?.trim() || undefined
 
   const user = await prisma.user.create({
-    data: { email, password: hashedPassword, role, connects: 50, referralCode: userReferralCode, referredById },
+    data: { email, password: hashedPassword, role, connects: 50, referralCode: userReferralCode, referredById, timezone },
   })
 
   // Seed default notification preferences (opt-out for high-frequency types)

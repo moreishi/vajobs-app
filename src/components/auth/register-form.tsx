@@ -20,6 +20,10 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
   const [referralCode, setReferralCode] = useState(getRefFromUrl)
+  const [browserTz] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+  })
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -27,6 +31,7 @@ export function RegisterForm() {
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    formData.set('timezone', browserTz)
     const result = await signUp(formData)
 
     if (result?.error) {
