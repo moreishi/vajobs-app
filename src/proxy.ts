@@ -18,6 +18,11 @@ export default auth((req) => {
     if (!isLoggedIn) {
       return NextResponse.redirect(new URL('/login', nextUrl))
     }
+
+    // Guests must pick a role before accessing the dashboard
+    if (role === 'guest' && nextUrl.pathname !== '/dashboard/choose-role') {
+      return NextResponse.redirect(new URL('/dashboard/choose-role', nextUrl))
+    }
   }
 
   // Posting jobs is client/admin only

@@ -25,7 +25,9 @@ export default async function DashboardPage() {
   const userId = user.id!
 
   // Redirect to onboarding if profile not set up
-  if (role === 'talent') {
+  if (role === 'guest') {
+    redirect('/dashboard/choose-role')
+  } else if (role === 'talent') {
     const profile = await prisma.profile.findUnique({
       where: { userId },
       select: { headline: true, bio: true, skills: true },
