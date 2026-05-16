@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { getStorageProvider } from '@/lib/storage'
 
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -36,13 +35,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'File too large. Maximum 10MB' }, { status: 400 })
   }
 
-  const ext = path.extname(file.name)
-  const uniqueName = `${crypto.randomUUID()}${ext}`
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-  await mkdir(uploadDir, { recursive: true })
+  const ext = file.name.split('.').pop()
+  const uniqueName = `${crypto.randomUUID()}${ext ? '.' + ext : ''}`
 
-  const bytes = await file.arrayBuffer()
-  await writeFile(path.join(uploadDir, uniqueName), Buffer.from(bytes))
+  const storage = await getStorageProvider()
+  const url = await storage.save(file, uniqueName)
 
-  return NextResponse.json({ url: `/uploads/${uniqueName}` })
+  return NextResponse.json({ url })
 }
