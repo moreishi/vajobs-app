@@ -268,6 +268,7 @@ describe('getReferralRewardsHistory', () => {
         referee: { name: null, email: 'bob@test.com' },
       },
     ] as any)
+    vi.mocked(prisma.referralMilestone.findMany).mockResolvedValueOnce([])
 
     const result = await getReferralRewardsHistory('referrer-id')
 
@@ -282,10 +283,11 @@ describe('getReferralRewardsHistory', () => {
       orderBy: { createdAt: 'desc' },
     })
     expect(result).toHaveLength(2)
-    expect(result[0].refereeName).toBe('Jane Doe')
-    expect(result[0].refereeEmail).toBe('jane@test.com')
-    expect(result[1].refereeName).toBe('bob@test.com')
-    expect(result[1].refereeEmail).toBe('bob@test.com')
+    // Sorted by createdAt desc: bob (May 10) comes before Jane (May 1)
+    expect(result[0].refereeName).toBeNull()
+    expect(result[0].refereeEmail).toBe('bob@test.com')
+    expect(result[1].refereeName).toBe('Jane Doe')
+    expect(result[1].refereeEmail).toBe('jane@test.com')
   })
 
   it('returns milestone bonuses alongside referral rewards', async () => {
@@ -335,6 +337,7 @@ describe('sendReferralInvite', () => {
       id: 'user-id',
       referralCode: 'ABC12345',
       name: 'John Doe',
+      role: 'talent',
     } as any)
 
     const result = await sendReferralInvite('friend@example.com', 'http://localhost:3000')
@@ -362,6 +365,7 @@ describe('sendReferralInvite', () => {
       id: 'user-id',
       referralCode: null,
       name: 'John Doe',
+      role: 'talent',
     } as any)
 
     const result = await sendReferralInvite('friend@example.com', 'http://localhost:3000')
@@ -377,16 +381,82 @@ describe('sendReferralInvite', () => {
     expect(sendEmail).not.toHaveBeenCalled()
   })
 
+  it('uses hello-va landing page for talent referrers', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'user-id',
+      referralCode: 'ABC12345',
+      name: 'Talent User',
+      role: 'talent',
+    } as any)
+    const { buildEmailHtml } = await import('@/lib/email')
+
+    await sendReferralInvite('friend@example.com', 'http://localhost:3000')
+
+    expect(buildEmailHtml).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ url: 'http://localhost:3000/hello-va?ref=ABC12345' }),
+      expect.any(Object),
+    )
+  })
+
+  it('uses hello-startup landing page for client referrers', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'user-id',
+      referralCode: 'XYZ99999',
+      name: 'Client User',
+      role: 'client',
+    } as any)
+    const { buildEmailHtml } = await import('@/lib/email')
+
+    await sendReferralInvite('friend@example.com', 'http://localhost:3000')
+
+    expect(buildEmailHtml).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ url: 'http://localhost:3000/hello-startup?ref=XYZ99999' }),
+      expect.any(Object),
+    )
+  })
+
   it('handles email send failure gracefully', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: 'user-id',
       referralCode: 'ABC12345',
       name: 'John Doe',
+      role: 'talent',
     } as any)
     vi.mocked(sendEmail).mockRejectedValueOnce(new Error('Network error'))
 
     const result = await sendReferralInvite('friend@example.com', 'http://localhost:3000')
 
     expect(result).toEqual({ error: 'Failed to send invite' })
+  })
+})
+
+describe('referralFAQItems', () => {
+  let faqItems: typeof import('@/components/dashboard/referral-faq').faqItems
+
+  beforeEach(async () => {
+    const mod = await import('@/components/dashboard/referral-faq')
+    faqItems = mod.faqItems
+  })
+
+  it('has all questions with non-empty content', () => {
+    expect(faqItems.length).toBeGreaterThan(0)
+    for (const item of faqItems) {
+      expect(item.q).toBeTruthy()
+      expect(item.a).toBeTruthy()
+    }
+  })
+
+  it('covers how referrals work', () => {
+    const allText = faqItems.map(i => i.q + i.a).join(' ')
+    expect(allText).toMatch(/referral/i)
+    expect(allText).toMatch(/connect/i)
+  })
+
+  it('covers referral landing pages', () => {
+    const allText = faqItems.map(i => i.q + i.a).join(' ')
+    expect(allText).toMatch(/hello-va/)
+    expect(allText).toMatch(/hello-startup/)
   })
 })

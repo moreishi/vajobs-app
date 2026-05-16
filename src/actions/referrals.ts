@@ -207,12 +207,14 @@ export async function sendReferralInvite(
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { referralCode: true, name: true },
+    select: { referralCode: true, name: true, role: true },
   })
   if (!user) return { error: 'Not authenticated' }
   if (!user.referralCode) return { error: 'No referral code found' }
 
-  const registerUrl = `${baseUrl}/register?ref=${user.referralCode}`
+  // Send referred users to the appropriate landing page based on referrer role
+  const landingPage = user.role === 'client' ? 'hello-startup' : 'hello-va'
+  const registerUrl = `${baseUrl}/${landingPage}?ref=${user.referralCode}`
   const referrerName = user.name || 'Someone'
 
   try {

@@ -14,7 +14,7 @@ interface ReferralCardProps {
 
 export function ReferralCard({ referralCode, referralEarnings, baseUrl, conversionStats }: ReferralCardProps) {
   const [copied, setCopied] = useState(false)
-  const shareLink = `${baseUrl}/register?ref=${referralCode}`
+  const shareLink = `${baseUrl}/hello-va?ref=${referralCode}`
 
   async function handleCopy() {
     try {

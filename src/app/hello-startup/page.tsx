@@ -52,9 +52,15 @@ const WHY_FILIPINO = [
   },
 ]
 
-export default async function HelloStartupPage() {
+export default async function HelloStartupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>
+}) {
+  const { ref } = await searchParams
   const session = await auth()
   const isLoggedIn = !!session?.user
+  const registerUrl = ref ? `/register?ref=${ref}` : '/register'
 
   const [talentCount, placementCount, jobCount] = await Promise.all([
     prisma.profile.count({ where: { isPublic: true } }),
@@ -86,7 +92,7 @@ export default async function HelloStartupPage() {
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/register"
+                  href={registerUrl}
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'text-base px-8 bg-sky-600 hover:bg-sky-700'
@@ -300,7 +306,7 @@ export default async function HelloStartupPage() {
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/register"
+                  href={registerUrl}
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'text-base px-8 bg-sky-600 hover:bg-sky-700'

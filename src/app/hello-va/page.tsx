@@ -57,9 +57,15 @@ const BENEFITS = [
   },
 ]
 
-export default async function HelloVAPage() {
+export default async function HelloVAPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>
+}) {
+  const { ref } = await searchParams
   const session = await auth()
   const isLoggedIn = !!session?.user
+  const registerUrl = ref ? `/register?ref=${ref}` : '/register'
 
   const [jobCount, talentCount, placementCount] = await Promise.all([
     prisma.jobPost.count({ where: { status: 'open' } }),
@@ -92,7 +98,7 @@ export default async function HelloVAPage() {
               </p>
               <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/register"
+                  href={registerUrl}
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'text-base px-8 bg-emerald-600 hover:bg-emerald-700'
@@ -283,7 +289,7 @@ export default async function HelloVAPage() {
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
                 <Link
-                  href="/register"
+                  href={registerUrl}
                   className={cn(
                     buttonVariants({ size: 'lg' }),
                     'text-base px-8 bg-emerald-600 hover:bg-emerald-700'
@@ -312,7 +318,7 @@ export default async function HelloVAPage() {
             <Link href="/jobs" className="hover:text-foreground transition-colors">
               Browse Jobs
             </Link>
-            <Link href="/register" className="hover:text-foreground transition-colors">
+            <Link href={registerUrl} className="hover:text-foreground transition-colors">
               Sign Up
             </Link>
             <Link href="/" className="hover:text-foreground transition-colors">

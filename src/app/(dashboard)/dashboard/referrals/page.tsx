@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ReferralInviteForm } from '@/components/dashboard/referral-invite-form'
+import { ReferralFAQ } from '@/components/dashboard/referral-faq'
 import { getReferralConversionStats } from '@/lib/referrals'
 import { getReferralRewardsHistory } from '@/actions/referrals'
 
@@ -153,6 +154,11 @@ export default async function ReferralsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* FAQ */}
+      <div className="mt-8">
+        <ReferralFAQ />
+      </div>
     </>
   )
 }
