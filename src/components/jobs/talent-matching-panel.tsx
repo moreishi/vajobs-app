@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { findMatchingTalents, enrichMatchingWithAI } from '@/actions/talent-matching'
+import { getSavedApiKey, saveApiKey, deleteSavedApiKey } from '@/actions/ai-keys'
 import { PROVIDERS } from '@/lib/ai/providers'
 import { toast } from 'sonner'
 import { ChevronDownIcon, ChevronUpIcon, UsersIcon, SparklesIcon, ExternalLinkIcon } from 'lucide-react'
@@ -24,6 +25,26 @@ export function TalentMatchingPanel({ jobPostId }: { jobPostId: string }) {
   const [aiKey, setAiKey] = useState('')
   const [aiBaseUrl, setAiBaseUrl] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [rememberAiKey, setRememberAiKey] = useState(false)
+  const [hasSavedAiKey, setHasSavedAiKey] = useState(false)
+
+  const loadSavedAiKey = useCallback(async (prov: AiProviderId) => {
+    const saved = await getSavedApiKey(prov)
+    if (saved) {
+      setAiKey(saved.apiKey)
+      setHasSavedAiKey(true)
+      setRememberAiKey(true)
+      if (saved.baseUrl) setAiBaseUrl(saved.baseUrl)
+      if (saved.model) setAiModel(saved.model)
+    } else {
+      setHasSavedAiKey(false)
+      setRememberAiKey(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadSavedAiKey(aiProvider)
+  }, [aiProvider, loadSavedAiKey])
 
   async function handleFind() {
     setLoading(true)
@@ -56,7 +77,19 @@ export function TalentMatchingPanel({ jobPostId }: { jobPostId: string }) {
     } else {
       setResults(res.data)
       toast.success('AI enrichment complete')
+      if (rememberAiKey) {
+        await saveApiKey(aiProvider, aiKey.trim(), aiProvider === 'custom' ? aiBaseUrl.trim() : undefined, aiModel)
+        setHasSavedAiKey(true)
+      }
     }
+  }
+
+  async function handleForgetKey() {
+    await deleteSavedAiKey(aiProvider)
+    setHasSavedAiKey(false)
+    setRememberAiKey(false)
+    setAiKey('')
+    toast.success('Saved key removed')
   }
 
   const aiConfig = PROVIDERS[aiProvider]
@@ -156,29 +189,50 @@ export function TalentMatchingPanel({ jobPostId }: { jobPostId: string }) {
                   </div>
                 </div>
 
-                <div className="flex items-end gap-3">
-                  <div className="flex-1">
-                    <Label className="text-xs">API Key</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">API Key</Label>
+                  <div className="flex gap-2">
                     <Input
                       type="password"
                       value={aiKey}
                       onChange={(e) => setAiKey(e.target.value)}
                       placeholder="sk-..."
-                      className="mt-1 h-8 text-sm"
+                      className="h-8 text-sm flex-1"
+                    />
+                    {hasSavedAiKey && (
+                      <button
+                        type="button"
+                        onClick={handleForgetKey}
+                        className="shrink-0 inline-flex items-center gap-1 rounded-md border border-input px-2.5 text-xs text-muted-foreground hover:bg-accent"
+                      >
+                        Forget
+                      </button>
+                    )}
+                  </div>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={rememberAiKey}
+                      onChange={(e) => setRememberAiKey(e.target.checked)}
+                      className="rounded border-input text-primary"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {hasSavedAiKey ? 'Update saved key on enrich' : 'Remember this key'}
+                    </span>
+                  </label>
+                </div>
+
+                {aiProvider === 'custom' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Base URL</Label>
+                    <Input
+                      value={aiBaseUrl}
+                      onChange={(e) => setAiBaseUrl(e.target.value)}
+                      placeholder="https://your-endpoint.com/v1"
+                      className="h-8 text-sm"
                     />
                   </div>
-                  {aiProvider === 'custom' && (
-                    <div className="flex-1">
-                      <Label className="text-xs">Base URL</Label>
-                      <Input
-                        value={aiBaseUrl}
-                        onChange={(e) => setAiBaseUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="mt-1 h-8 text-sm"
-                      />
-                    </div>
-                  )}
-                </div>
+                )}
 
                 <Button
                   type="button"

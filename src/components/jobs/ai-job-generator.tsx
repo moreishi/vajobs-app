@@ -1,14 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { generateJobDescription } from '@/actions/ai'
+import { getSavedApiKey, saveApiKey, deleteSavedApiKey } from '@/actions/ai-keys'
 import { PROVIDERS } from '@/lib/ai/providers'
 import { toast } from 'sonner'
-import { ChevronDownIcon, ChevronUpIcon, SparklesIcon } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, SparklesIcon, KeyIcon } from 'lucide-react'
 import type { AiProviderId, GeneratedJobData } from '@/lib/ai/providers'
 
 type AiJobGeneratorProps = {
@@ -25,9 +26,30 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [result, setResult] = useState<GeneratedJobData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [rememberKey, setRememberKey] = useState(false)
+  const [hasSavedKey, setHasSavedKey] = useState(false)
 
   const config = PROVIDERS[provider]
 
+  const loadSavedKey = useCallback(async (prov: AiProviderId) => {
+    const saved = await getSavedApiKey(prov)
+    if (saved) {
+      setApiKey(saved.apiKey)
+      setHasSavedKey(true)
+      setRememberKey(true)
+      if (saved.baseUrl) setBaseUrl(saved.baseUrl)
+      if (saved.model) setModel(saved.model)
+    } else {
+      setHasSavedKey(false)
+      setRememberKey(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadSavedKey(provider)
+  }, [provider, loadSavedKey])
+
+  // Clear result and error on provider change
   function handleProviderChange(value: string) {
     const id = value as AiProviderId
     setProvider(id)
@@ -60,7 +82,20 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
     } else {
       setResult(res.data)
       toast.success('Job description generated')
+      // Save key if remember is toggled
+      if (rememberKey) {
+        await saveApiKey(provider, apiKey.trim(), provider === 'custom' ? baseUrl.trim() : undefined, model)
+        setHasSavedKey(true)
+      }
     }
+  }
+
+  async function handleForgetKey() {
+    await deleteSavedApiKey(provider)
+    setHasSavedKey(false)
+    setRememberKey(false)
+    setApiKey('')
+    toast.success('Saved key removed')
   }
 
   return (
@@ -125,16 +160,37 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
           {/* API Key */}
           <div className="space-y-1.5">
             <Label className="text-xs">API Key</Label>
-            <Input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-              className="h-8 text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your key is sent directly to the provider. Not stored.
-            </p>
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+                className="h-8 text-sm flex-1"
+              />
+              {hasSavedKey && (
+                <button
+                  type="button"
+                  onClick={handleForgetKey}
+                  className="inline-flex items-center gap-1 rounded-md border border-input px-2.5 text-xs text-muted-foreground hover:bg-accent"
+                  title="Forget saved key"
+                >
+                  <KeyIcon className="h-3 w-3" />
+                  Forget
+                </button>
+              )}
+            </div>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={rememberKey}
+                onChange={(e) => setRememberKey(e.target.checked)}
+                className="rounded border-input text-primary"
+              />
+              <span className="text-xs text-muted-foreground">
+                {hasSavedKey ? 'Update saved key on generate' : 'Remember this key'}
+              </span>
+            </label>
           </div>
 
           {/* Base URL (custom only) */}
