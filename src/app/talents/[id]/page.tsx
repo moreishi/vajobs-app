@@ -68,8 +68,12 @@ export default async function TalentProfilePage({ params }: { params: Promise<{ 
         <Card className="mt-6">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold">
-                {profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()}
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-muted text-2xl font-bold overflow-hidden">
+                {profile.user.image ? (
+                  <img src={profile.user.image} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  profile.user.name?.[0]?.toUpperCase() || profile.user.email[0].toUpperCase()
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
