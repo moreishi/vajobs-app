@@ -42,6 +42,10 @@ vi.mock('@/actions/notifications', () => ({
   createNotification: vi.fn(),
 }))
 
+vi.mock('@/actions/reputation', () => ({
+  awardXp: vi.fn(),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 let seedJobs: typeof import('@/actions/jobs').seedJobs
@@ -306,6 +310,55 @@ describe('createJob', () => {
     formData.set('type', 'full-time')
 
     await createJob(formData)
+  })
+
+  it('awards XP on first job post', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'client-id',
+      email: 'client@example.com',
+      name: null,
+      referredById: null,
+    } as any)
+    vi.mocked(prisma.jobPost.create).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.jobPost.count).mockResolvedValueOnce(1)
+    const { awardXp } = await import('@/actions/reputation')
+
+    const formData = new FormData()
+    formData.set('title', 'Senior Dev')
+    formData.set('description', 'We are looking for an experienced developer to join our team building modern web applications.')
+    formData.set('type', 'full-time')
+
+    await createJob(formData)
+
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'client-id',
+      amount: 25,
+      reason: 'first_job_post',
+      referenceId: 'first_job_post',
+    })
+  })
+
+  it('does not award XP on subsequent job posts', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'client-id',
+      email: 'client@example.com',
+      name: null,
+      referredById: null,
+    } as any)
+    vi.mocked(prisma.jobPost.create).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.jobPost.count).mockResolvedValueOnce(2)
+    const { awardXp } = await import('@/actions/reputation')
+
+    const formData = new FormData()
+    formData.set('title', 'Senior Dev')
+    formData.set('description', 'We are looking for an experienced developer to join our team building modern web applications.')
+    formData.set('type', 'full-time')
+
+    await createJob(formData)
+
+    expect(awardXp).not.toHaveBeenCalled()
   })
 
 describe('deleteJob', () => {

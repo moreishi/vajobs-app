@@ -26,6 +26,7 @@ export const DEFAULT_EMAIL_PREFERENCES: Record<NotificationType, boolean> = {
   proposal_accepted: true,
   proposal_updated: false,
   referral_reward: true,
+  xp_level_up: true,
 }
 
 export function defaultEmailEnabled(type: string): boolean {

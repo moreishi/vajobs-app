@@ -32,6 +32,10 @@ vi.mock('@/lib/email', () => ({
   buildEmailHtml: vi.fn(() => '<html></html>'),
 }))
 
+vi.mock('@/actions/reputation', () => ({
+  awardXp: vi.fn(),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 
@@ -244,6 +248,29 @@ describe('endEngagement', () => {
       data: { status: 'ended', endDate: expect.any(Date) },
     })
     expect(revalidatePath).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ success: true })
+  })
+
+  it('awards 50 XP to both talent and client when engagement ends', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id' } } as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce(mockEngagementDetail)
+    vi.mocked(prisma.engagement.update).mockResolvedValueOnce({ ...mockEngagementDetail, status: 'ended', endDate: new Date() })
+    const { awardXp } = await import('@/actions/reputation')
+
+    const result = await endEngagement('engagement-id')
+
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'talent-id',
+      amount: 50,
+      reason: 'engagement_ended',
+      referenceId: 'engagement_ended_engagement-id_talent',
+    })
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'client-id',
+      amount: 50,
+      reason: 'engagement_ended',
+      referenceId: 'engagement_ended_engagement-id_client',
+    })
     expect(result).toEqual({ success: true })
   })
 })

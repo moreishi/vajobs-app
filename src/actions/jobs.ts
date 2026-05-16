@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { checkJobAlerts } from '@/actions/saved-search-alerts'
 import { grantReferralReward } from '@/actions/referrals'
+import { awardXp } from '@/actions/reputation'
 
 const JOB_TYPES = ['full-time', 'part-time', 'contract', 'freelance', 'internship'] as const
 
@@ -62,6 +63,14 @@ export async function createJob(formData: FormData) {
     if (jobCount === 1) {
       await grantReferralReward(session.user.id, user.referredById, 'client', 'posting their first job', 15)
     }
+  }
+
+  // Award XP for first job post
+  const jobCount = await prisma.jobPost.count({
+    where: { posterId: session.user.id },
+  })
+  if (jobCount === 1) {
+    await awardXp({ userId: session.user.id, amount: 25, reason: 'first_job_post', referenceId: 'first_job_post' })
   }
 
   // Check saved search alerts for matching jobs

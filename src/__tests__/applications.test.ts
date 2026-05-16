@@ -31,6 +31,10 @@ vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }))
 
+vi.mock('@/actions/reputation', () => ({
+  awardXp: vi.fn(),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 
@@ -245,6 +249,45 @@ describe('applyToJob', () => {
 
     await applyToJob('job-id', formData)
     // No referral reward checks
+  })
+
+  it('awards XP on first application', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(mockJob)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ connects: 10, referredById: null })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockApplication, {}, {}])
+    vi.mocked(prisma.application.count).mockResolvedValueOnce(1)
+    const { awardXp } = await import('@/actions/reputation')
+
+    const formData = new FormData()
+    formData.set('biddingConnects', '1')
+
+    await applyToJob('job-id', formData)
+
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'talent-id',
+      amount: 25,
+      reason: 'first_application',
+      referenceId: 'first_application',
+    })
+  })
+
+  it('does not award XP on subsequent applications', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(mockJob)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ connects: 10, referredById: null })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockApplication, {}, {}])
+    vi.mocked(prisma.application.count).mockResolvedValueOnce(2)
+    const { awardXp } = await import('@/actions/reputation')
+
+    const formData = new FormData()
+    formData.set('biddingConnects', '1')
+
+    await applyToJob('job-id', formData)
+
+    expect(awardXp).not.toHaveBeenCalled()
   })
 })
 

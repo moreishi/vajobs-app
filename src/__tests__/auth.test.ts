@@ -43,6 +43,10 @@ vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }))
 
+vi.mock('@/actions/reputation', () => ({
+  awardXp: vi.fn(),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 
 let signUp: typeof import('@/actions/auth').signUp
@@ -452,6 +456,7 @@ describe('verifyEmail', () => {
       expires: futureDate,
     })
     vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}])
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'user-id' } as any)
 
     const result = await verifyEmail('valid-token')
 
@@ -465,5 +470,27 @@ describe('verifyEmail', () => {
       }),
     ])
     expect(result).toEqual({ success: true })
+  })
+
+  it('awards 50 XP when email is verified', async () => {
+    const futureDate = new Date()
+    futureDate.setHours(futureDate.getHours() + 2)
+    vi.mocked(prisma.verificationToken.findUnique).mockResolvedValueOnce({
+      identifier: 'user@example.com',
+      token: 'valid-token',
+      expires: futureDate,
+    })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([{}, {}])
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: 'user-id' } as any)
+    const { awardXp } = await import('@/actions/reputation')
+
+    await verifyEmail('valid-token')
+
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'user-id',
+      amount: 50,
+      reason: 'email_verified',
+      referenceId: 'email_verified',
+    })
   })
 })

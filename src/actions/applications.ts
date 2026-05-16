@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { createNotification } from '@/actions/notifications'
 import { grantReferralReward } from '@/actions/referrals'
+import { awardXp } from '@/actions/reputation'
 import type { ApplicationStatus, InterviewStatus } from '@/types'
 
 const VALID_STATUSES: ApplicationStatus[] = ['pending', 'reviewed', 'interview', 'accepted', 'rejected']
@@ -80,6 +81,14 @@ export async function applyToJob(jobId: string, formData: FormData) {
     if (applicationCount === 1) {
       await grantReferralReward(session.user.id, user.referredById, 'talent', 'submitting their first application', 10)
     }
+  }
+
+  // Award XP for first application
+  const applicationCount = await prisma.application.count({
+    where: { applicantId: session.user.id },
+  })
+  if (applicationCount === 1) {
+    await awardXp({ userId: session.user.id, amount: 25, reason: 'first_application', referenceId: 'first_application' })
   }
 
   await createNotification({

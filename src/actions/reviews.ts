@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { createNotification } from '@/actions/notifications'
+import { awardXp } from '@/actions/reputation'
 
 export async function createReview(applicationId: string, formData: FormData) {
   const session = await auth()
@@ -53,6 +54,8 @@ export async function createReview(applicationId: string, formData: FormData) {
     body: `You received a ${rating}-star review for your work on "${application.jobPost.title}"`,
     link: ROUTES.TALENT_DETAIL(application.applicantId),
   })
+
+  await awardXp({ userId: application.applicantId, amount: 10, reason: 'review_received', referenceId: `review_${applicationId}` })
 
   revalidatePath(ROUTES.TALENT_DETAIL(application.applicantId))
   revalidatePath(ROUTES.DASHBOARD_APPLICATION_DETAIL(applicationId))

@@ -23,6 +23,10 @@ vi.mock('@/lib/email', () => ({
   buildEmailHtml: vi.fn(() => '<html></html>'),
 }))
 
+vi.mock('@/actions/reputation', () => ({
+  awardXp: vi.fn(),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 
@@ -210,6 +214,28 @@ describe('createReview', () => {
     const result = await createReview('app-id', formData)
 
     expect(result).toEqual({ success: true })
+  })
+
+  it('awards 10 XP to talent when review is created', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
+    vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.review.create).mockResolvedValueOnce({} as any)
+    const { awardXp } = await import('@/actions/reputation')
+
+    const formData = new FormData()
+    formData.set('rating', '4')
+    formData.set('comment', 'Good work')
+
+    await createReview('app-id', formData)
+
+    expect(awardXp).toHaveBeenCalledWith({
+      userId: 'talent-id',
+      amount: 10,
+      reason: 'review_received',
+      referenceId: 'review_app-id',
+    })
   })
 })
 

@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { DEFAULT_EMAIL_PREFERENCES } from '@/lib/notification-defaults'
+import { awardXp } from '@/actions/reputation'
 import type { Role } from '@/types'
 
 export async function signInWithEmail(formData: FormData) {
@@ -138,6 +139,11 @@ export async function verifyEmail(token: string) {
     }),
     prisma.verificationToken.delete({ where: { token } }),
   ])
+
+  const user = await prisma.user.findUnique({ where: { email: stored.identifier }, select: { id: true } })
+  if (user) {
+    await awardXp({ userId: user.id, amount: 50, reason: 'email_verified', referenceId: 'email_verified' })
+  }
 
   return { success: true }
 }

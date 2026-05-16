@@ -52,6 +52,8 @@ model User {
   redeemedReferralInvites ReferralInvite[]    @relation("RedeemedInvites")
   aiApiKeys               AiApiKey[]
   timezone         String    @default("Asia/Manila")
+  xp               Int       @default(0)
+  xpTransactions   XpTransaction[]
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -628,4 +630,18 @@ model AiApiKey {
 
   @@unique([userId, provider])
   @@index([userId])
+}
+
+model XpTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int
+  reason      String
+  referenceId String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }

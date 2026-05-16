@@ -29,6 +29,7 @@ export type NotificationType =
   | 'proposal_accepted'
   | 'proposal_updated'
   | 'referral_reward'
+  | 'xp_level_up'
 
 const EMAIL_TEMPLATES: Record<string, string> = {
   application_received: 'A new applicant has applied to your job posting.',
@@ -43,6 +44,7 @@ const EMAIL_TEMPLATES: Record<string, string> = {
   subscription_cancelled: 'Your subscription has been cancelled.',
   subscription_renewal: 'Your subscription has been renewed.',
   referral_reward: 'You received a referral bonus.',
+  xp_level_up: 'You reached a new XP tier!',
 }
 
 export async function createNotification({

@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { createNotification } from '@/actions/notifications'
+import { awardXp } from '@/actions/reputation'
 
 export async function getEngagements(userId: string, role: string, status?: string) {
   const session = await auth()
@@ -81,6 +82,10 @@ export async function endEngagement(engagementId: string) {
     where: { id: engagementId },
     data: { status: 'ended', endDate: new Date() },
   })
+
+  // Award XP to both parties when engagement ends
+  await awardXp({ userId: engagement.talentId, amount: 50, reason: 'engagement_ended', referenceId: `engagement_ended_${engagementId}_talent` })
+  await awardXp({ userId: engagement.clientId, amount: 50, reason: 'engagement_ended', referenceId: `engagement_ended_${engagementId}_client` })
 
   await createNotification({
     userId: engagement.talentId,
