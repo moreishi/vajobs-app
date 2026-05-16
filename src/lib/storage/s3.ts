@@ -15,7 +15,6 @@ function getConfig() {
 
 async function getS3Client(config: ReturnType<typeof getConfig>) {
   try {
-    // @ts-expect-error - optional dependency, installed only when S3 is configured
     const { S3Client } = await import('@aws-sdk/client-s3')
     return new S3Client({
       region: config.region,
@@ -36,7 +35,6 @@ export const s3StorageProvider: StorageProvider = {
     const config = getConfig()
     const client = await getS3Client(config)
 
-    // @ts-expect-error - optional dependency
     const { PutObjectCommand } = await import('@aws-sdk/client-s3')
     const bytes = await file.arrayBuffer()
 
@@ -54,7 +52,6 @@ export const s3StorageProvider: StorageProvider = {
     const config = getConfig()
     const client = await getS3Client(config)
 
-    // @ts-expect-error - optional dependency
     const { DeleteObjectCommand } = await import('@aws-sdk/client-s3')
 
     await client.send(new DeleteObjectCommand({

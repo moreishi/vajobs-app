@@ -18,7 +18,7 @@ type ReviewWithRelations = {
 
 export function ReviewsTable({ reviews }: { reviews: ReviewWithRelations[] }) {
   const router = useRouter()
-  const [pendingId, startDelete] = useTransition()
+  const [isPending, startDelete] = useTransition()
 
   function handleDelete(reviewId: string) {
     if (!confirm('Delete this review? This cannot be undone.')) return
@@ -63,10 +63,10 @@ export function ReviewsTable({ reviews }: { reviews: ReviewWithRelations[] }) {
             <div className="col-span-1">
               <button
                 onClick={() => handleDelete(review.id)}
-                disabled={pendingId === review.id}
+                disabled={isPending}
                 className="text-xs text-destructive hover:underline disabled:opacity-50"
               >
-                {pendingId === review.id ? '...' : 'Delete'}
+                {isPending ? '...' : 'Delete'}
               </button>
             </div>
           </div>

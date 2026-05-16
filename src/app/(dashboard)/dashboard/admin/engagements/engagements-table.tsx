@@ -19,7 +19,7 @@ type EngagementWithRelations = {
 
 export function EngagementsTable({ engagements }: { engagements: EngagementWithRelations[] }) {
   const router = useRouter()
-  const [pendingId, startEnd] = useTransition()
+  const [isPending, startEnd] = useTransition()
 
   function handleEnd(engagementId: string) {
     if (!confirm('End this engagement? This will mark it as ended.')) return
@@ -71,10 +71,10 @@ export function EngagementsTable({ engagements }: { engagements: EngagementWithR
               {e.status === 'active' && (
                 <button
                   onClick={() => handleEnd(e.id)}
-                  disabled={pendingId === e.id}
+                  disabled={isPending}
                   className="text-xs text-destructive hover:underline disabled:opacity-50"
                 >
-                  {pendingId === e.id ? '...' : 'End'}
+                  {isPending ? '...' : 'End'}
                 </button>
               )}
             </div>

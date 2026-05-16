@@ -85,7 +85,7 @@ export function TalentMatchingPanel({ jobPostId }: { jobPostId: string }) {
   }
 
   async function handleForgetKey() {
-    await deleteSavedAiKey(aiProvider)
+    await deleteSavedApiKey(aiProvider)
     setHasSavedAiKey(false)
     setRememberAiKey(false)
     setAiKey('')

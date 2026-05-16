@@ -207,7 +207,7 @@ export async function sendReferralInvite(
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { referralCode: true, name: true, role: true },
+    select: { id: true, referralCode: true, name: true, role: true },
   })
   if (!user) return { error: 'Not authenticated' }
   if (!user.referralCode) return { error: 'No referral code found' }
