@@ -22,6 +22,12 @@ export async function createReview(applicationId: string, formData: FormData) {
   if (application.jobPost.posterId !== userId) return { error: 'Only the job poster can review this talent' }
   if (application.status !== 'accepted') return { error: 'Can only review after hiring' }
 
+  const engagement = await prisma.engagement.findUnique({
+    where: { applicationId },
+    select: { status: true },
+  })
+  if (!engagement || engagement.status !== 'ended') return { error: 'Can only review after the engagement has ended' }
+
   const existing = await prisma.review.findUnique({ where: { applicationId } })
   if (existing) return { error: 'You have already reviewed this talent' }
 

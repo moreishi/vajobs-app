@@ -6,6 +6,7 @@ vi.mock('@/lib/prisma', () => ({
     review: { findUnique: vi.fn(), create: vi.fn(), findMany: vi.fn(), aggregate: vi.fn() },
     notification: { create: vi.fn() },
     user: { findUnique: vi.fn() },
+    engagement: { findUnique: vi.fn() },
   },
 }))
 
@@ -86,9 +87,26 @@ describe('createReview', () => {
     expect(result).toEqual({ error: 'Can only review after hiring' })
   })
 
+  it('returns error when engagement has not ended', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'active' } as any)
+    const result = await createReview('app-id', new FormData())
+    expect(result).toEqual({ error: 'Can only review after the engagement has ended' })
+  })
+
+  it('returns error when no engagement exists', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce(null)
+    const result = await createReview('app-id', new FormData())
+    expect(result).toEqual({ error: 'Can only review after the engagement has ended' })
+  })
+
   it('returns error when review already exists', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce({ id: 'existing-review' } as any)
     const result = await createReview('app-id', new FormData())
     expect(result).toEqual({ error: 'You have already reviewed this talent' })
@@ -97,6 +115,7 @@ describe('createReview', () => {
   it('returns error for rating below 1', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     const formData = new FormData()
     formData.set('rating', '0')
@@ -107,6 +126,7 @@ describe('createReview', () => {
   it('returns error for rating above 5', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     const formData = new FormData()
     formData.set('rating', '6')
@@ -117,6 +137,7 @@ describe('createReview', () => {
   it('returns error for non-numeric rating', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     const formData = new FormData()
     formData.set('rating', 'abc')
@@ -127,6 +148,7 @@ describe('createReview', () => {
   it('creates review successfully', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     vi.mocked(prisma.review.create).mockResolvedValueOnce({} as any)
 
@@ -151,6 +173,7 @@ describe('createReview', () => {
   it('creates review without comment', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: mockClientUser } as any)
     vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(mockApplication as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     vi.mocked(prisma.review.create).mockResolvedValueOnce({} as any)
 
@@ -177,6 +200,7 @@ describe('createReview', () => {
       ...mockApplication,
       jobPost: { posterId: 'admin-id', title: 'Test Job' },
     } as any)
+    vi.mocked(prisma.engagement.findUnique).mockResolvedValueOnce({ status: 'ended' } as any)
     vi.mocked(prisma.review.findUnique).mockResolvedValueOnce(null)
     vi.mocked(prisma.review.create).mockResolvedValueOnce({} as any)
 
