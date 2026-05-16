@@ -18,6 +18,10 @@ services:
       # App
       - NODE_ENV=production
       - CRON_SECRET=${CRON_SECRET}
+      # Sentry
+      - SENTRY_DSN=${SENTRY_DSN}
+      - SENTRY_ORG=${SENTRY_ORG}
+      - SENTRY_PROJECT=${SENTRY_PROJECT}
       # Email (Resend)
       - RESEND_API_KEY=${RESEND_API_KEY}
       - EMAIL_FROM=${EMAIL_FROM}
