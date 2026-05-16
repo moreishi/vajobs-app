@@ -9,9 +9,9 @@ export function BarChart({
 
   return (
     <div className="flex items-end gap-1" style={{ height }}>
-      {data.map((d) => (
+      {data.map((d, i) => (
         <div
-          key={d.label}
+          key={`${d.label}-${i}`}
           className="flex flex-1 flex-col items-center gap-1"
         >
           <span className="text-[10px] font-medium tabular-nums text-muted-foreground">{d.value}</span>
