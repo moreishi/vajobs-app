@@ -55,6 +55,8 @@ export async function findMatchingTalents(
       verified: true,
       user: { select: { name: true, email: true } },
     },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
   })
 
   const results: TalentMatchResult[] = []

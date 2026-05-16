@@ -368,6 +368,7 @@ export async function getConversations() {
       },
     },
     orderBy: { updatedAt: 'desc' },
+    take: 50,
   })
 
   return applications

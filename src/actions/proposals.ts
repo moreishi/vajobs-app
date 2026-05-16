@@ -25,6 +25,7 @@ export async function getJobProposals(jobPostId: string) {
       applicant: { select: { id: true, name: true, email: true } },
     },
     orderBy: [{ bidAmount: 'desc' }, { biddingConnects: 'desc' }],
+    take: 200,
   })
 
   return {

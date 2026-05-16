@@ -89,6 +89,7 @@ export async function checkJobAlerts(
   const activeAlerts = await prisma.savedSearchAlert.findMany({
     where: { type: 'jobs', active: true },
     include: { user: { select: { id: true, email: true } } },
+    take: 500,
   })
 
   for (const alert of activeAlerts) {
