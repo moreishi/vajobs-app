@@ -83,14 +83,14 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
       </CardHeader>
 
       {isOpen && (
-        <CardContent className="space-y-4 border-t pt-4">
+        <CardContent className="space-y-3 border-t pt-4">
           {/* Provider */}
-          <div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Provider</Label>
             <select
               value={provider}
               onChange={(e) => handleProviderChange(e.target.value)}
-              className="mt-1 flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+              className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
             >
               <option value="openai">OpenAI</option>
               <option value="anthropic">Anthropic</option>
@@ -100,20 +100,20 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
           </div>
 
           {/* Model */}
-          <div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Model</Label>
             {provider === 'custom' ? (
               <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="e.g. gpt-4o"
-                className="mt-1 h-8 text-sm"
+                className="h-8 text-sm"
               />
             ) : (
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="mt-1 flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                className="flex h-8 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
               >
                 {config.models.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -123,42 +123,42 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
           </div>
 
           {/* API Key */}
-          <div>
+          <div className="space-y-1.5">
             <Label className="text-xs">API Key</Label>
             <Input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-..."
-              className="mt-1 h-8 text-sm"
+              className="h-8 text-sm"
             />
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Your key is sent directly to the provider. Not stored.
             </p>
           </div>
 
           {/* Base URL (custom only) */}
           {provider === 'custom' && (
-            <div>
+            <div className="space-y-1.5">
               <Label className="text-xs">Base URL</Label>
               <Input
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 placeholder="https://your-endpoint.com/v1"
-                className="mt-1 h-8 text-sm"
+                className="h-8 text-sm"
               />
             </div>
           )}
 
           {/* Prompt */}
-          <div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Describe the role</Label>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={3}
               placeholder="e.g. Senior frontend developer, React, TypeScript, remote, $120k-$150k..."
-              className="mt-1 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
             />
           </div>
 
@@ -181,7 +181,7 @@ export function AiJobGenerator({ onApply }: AiJobGeneratorProps) {
 
           {/* Result */}
           {result && (
-            <div className="space-y-3 rounded-md border p-3">
+            <div className="space-y-2 rounded-md border p-3">
               <p className="text-xs font-medium text-muted-foreground">Generated Content</p>
 
               <ResultField
@@ -227,14 +227,14 @@ function ResultField({
   onApply: () => void
 }) {
   return (
-    <div>
+    <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium">{label}</span>
         <Button type="button" variant="outline" size="xs" onClick={onApply}>
           Apply
         </Button>
       </div>
-      <p className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">
+      <p className="whitespace-pre-wrap text-sm text-muted-foreground">
         {value || <span className="italic">(empty)</span>}
       </p>
     </div>
