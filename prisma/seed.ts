@@ -20,7 +20,7 @@ interface JobBlueprint {
 const CLIENTS = [
   { name: 'Client One', email: 'client1@vajobs.online' },
   { name: 'Client Two', email: 'client2@vajobs.online' },
-  { name: 'Client Three', email: 'client3@vajobs.online' },
+  { name: 'VA Talent Co.', email: 'client3@vajobs.online' },
 ]
 
 const TALENTS = [
@@ -212,7 +212,7 @@ function generateJobs(): GeneratedJob[] {
       shortDescription: `[Experienced] ${bp.shortDescription}`,
       salaryRange: bp.rates.beginner,
       skills: bp.skills,
-      posterIndex: i % 3,
+      posterIndex: 2,
     })
 
     jobs.push({
@@ -220,7 +220,7 @@ function generateJobs(): GeneratedJob[] {
       shortDescription: `[Advanced] ${bp.shortDescription}`,
       salaryRange: bp.rates.experienced,
       skills: bp.skills,
-      posterIndex: (i + 1) % 3,
+      posterIndex: 2,
     })
   }
   return jobs
@@ -395,7 +395,7 @@ async function main() {
       autoRenew: true,
     },
   })
-  console.log('  Created active subscription for Client Three')
+  console.log('  Created active subscription for VA Talent Co.')
 
   await prisma.paymentSetting.upsert({
     where: { key: 'active_provider' },
