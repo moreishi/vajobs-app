@@ -327,14 +327,12 @@ describe('createInvoice', () => {
     expect('data' in result && result.success).toBe(true)
   })
 
-  it('creates invoice as client', async () => {
+  it('returns error when client tries to create invoice', async () => {
     vi.mocked(auth).mockResolvedValueOnce(mockClient as any)
     vi.mocked(prisma.contract.findUnique).mockResolvedValueOnce({ ...mockContract, status: 'active' } as any)
-    vi.mocked(prisma.invoice.create).mockResolvedValueOnce({ ...mockInvoice, fromId: 'client-1', toId: 'talent-1' } as any)
 
     const result = await createInvoice({ contractId: 'contract-1', engagementId: 'eng-1', amount: 500 })
-    expect(prisma.invoice.create).toHaveBeenCalled()
-    expect('data' in result && result.success).toBe(true)
+    expect(result).toEqual({ error: 'Only the talent can create invoices' })
   })
 })
 

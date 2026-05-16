@@ -18,9 +18,10 @@ type Props = {
   contractActive: boolean
   invoices: InvoiceData[]
   userId: string
+  isTalent: boolean
 }
 
-export function InvoiceSection({ engagementId, contractId, contractActive, invoices: initialInvoices, userId }: Props) {
+export function InvoiceSection({ engagementId, contractId, contractActive, invoices: initialInvoices, userId, isTalent }: Props) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(true)
   const [invoices, setInvoices] = useState<InvoiceData[]>(initialInvoices)
@@ -111,7 +112,7 @@ export function InvoiceSection({ engagementId, contractId, contractActive, invoi
             </p>
           )}
 
-          {contractId && contractActive && (
+          {contractId && contractActive && isTalent && (
             <>
               {!showForm ? (
                 <Button type="button" size="sm" variant="outline" onClick={() => setShowForm(true)}>

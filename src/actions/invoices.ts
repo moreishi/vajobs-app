@@ -62,25 +62,22 @@ export async function createInvoice(data: {
   if (!contract) return { error: 'Contract not found' }
   if (contract.status !== 'active') return { error: 'Contract is not active' }
 
-  const isTalent = contract.talentId === session.user.id
-  const isClient = contract.clientId === session.user.id
-  if (!isTalent && !isClient) return { error: 'Not authorized' }
+  if (contract.talentId !== session.user.id) return { error: 'Only the talent can create invoices' }
 
   const invoice = await prisma.invoice.create({
     data: {
       contractId: data.contractId,
       engagementId: data.engagementId,
       fromId: session.user.id,
-      toId: isTalent ? contract.clientId : contract.talentId,
+      toId: contract.clientId,
       amount: data.amount,
       description: data.description || null,
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
     },
   })
 
-  const recipientId = isTalent ? contract.clientId : contract.talentId
   await createNotification({
-    userId: recipientId,
+    userId: contract.clientId,
     type: 'invoice_received',
     title: 'New Invoice',
     body: `An invoice for $${data.amount.toFixed(2)} has been created.`,

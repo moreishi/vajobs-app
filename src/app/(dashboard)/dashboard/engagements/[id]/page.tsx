@@ -122,6 +122,7 @@ export default async function EngagementDetailPage({
           contractActive={contract?.status === 'active'}
           invoices={invoices}
           userId={session.user.id}
+          isTalent={isTalent}
         />
 
         <Card>
