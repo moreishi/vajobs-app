@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { SessionProvider } from '@/components/auth/session-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -17,6 +17,17 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'VA Jobs Online',
   description: 'Connect with top talent and exciting opportunities',
+  appleWebApp: {
+    capable: true,
+    title: 'VA Jobs',
+    statusBarStyle: 'black-translucent',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#2563eb',
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
