@@ -1,111 +1,55 @@
-'use client'
-
-import { useActionState } from 'react'
-import Link from 'next/link'
-import { updateAccount } from '@/actions/auth'
+import { redirect } from 'next/navigation'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { buttonVariants } from '@/components/ui/button'
+import { SettingsForm } from '@/components/dashboard/settings-form'
 
-export default function SettingsPage() {
-  const [state, action, pending] = useActionState(updateAccount, { error: '' })
+export default async function SettingsPage() {
+  const session = await auth()
+  if (!session?.user?.id) redirect('/login')
 
-  if (state.success) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-green-600 dark:text-green-400">Account updated successfully.</p>
-          <Link href="/dashboard" className={buttonVariants()}>
-            Back to Dashboard
-          </Link>
-        </CardContent>
-      </Card>
-    )
-  }
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      referralCode: true,
+      referredBy: { select: { name: true, email: true } },
+      referralRewardsGiven: { select: { amount: true } },
+    },
+  })
+
+  const totalEarned = user?.referralRewardsGiven.reduce((sum, r) => sum + r.amount, 0) ?? 0
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Account Settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form action={action} className="space-y-4">
-          {state?.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
-          )}
+    <div className="space-y-8">
+      <SettingsForm />
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Your name"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <hr className="my-2" />
-
-          <div>
-            <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">Current Password</label>
-            <input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Required to change password"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium mb-1">New Password</label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Leave blank to keep current"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">Min 6 characters. Leave blank to keep current password.</p>
-          </div>
-
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              type="submit"
-              disabled={pending}
-              className={buttonVariants()}
-            >
-              {pending ? 'Saving...' : 'Save Changes'}
-            </button>
-            <Link href="/dashboard" className={buttonVariants({ variant: 'outline' })}>
-              Cancel
-            </Link>
-          </div>
-        </form>
-        <div className="mt-6 border-t pt-6">
-          <Link
-            href="/dashboard/settings/notifications"
-            className={buttonVariants({ variant: 'ghost', size: 'sm' })}
-          >
-            Notification Preferences
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+      {user?.referralCode && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Referral Program</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Your Referral Code</span>
+              <p className="mt-1 font-mono text-lg font-bold">{user.referralCode}</p>
+            </div>
+            {totalEarned > 0 && (
+              <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+                <span className="text-sm text-muted-foreground">Total connects earned from referrals</span>
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">+{totalEarned}</span>
+              </div>
+            )}
+            {user.referredBy && (
+              <p className="text-xs text-muted-foreground">
+                You were referred by {user.referredBy.name || user.referredBy.email}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Share your code with friends. You both earn connects when they sign up and complete their first action.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   )
 }

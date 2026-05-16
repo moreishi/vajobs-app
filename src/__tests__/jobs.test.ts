@@ -18,6 +18,11 @@ vi.mock('@/lib/prisma', () => ({
     referralReward: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      count: vi.fn(),
+    },
+    referralMilestone: {
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn(),
     },
     $transaction: vi.fn(),
   },

@@ -38,16 +38,42 @@ export function ReferralCard({ referralCode, referralEarnings, baseUrl, conversi
             {referralCode}
           </code>
           <div className="flex gap-1 justify-center sm:justify-start">
-            <Button variant="outline" size="sm" onClick={handleCopy}>
-              {copied ? 'Copied!' : 'Copy Link'}
-            </Button>
             <a
-              href={`mailto:?subject=Join%20me%20on%20VA%20Jobs%20Online&body=Sign%20up%20using%20my%20referral%20link%3A%20${encodeURIComponent(shareLink)}`}
+              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className={buttonVariants({ variant: 'outline', size: 'sm' })}
             >
-              Share
+              Facebook
+            </a>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('Join me on VA Jobs Online!')}&url=${encodeURIComponent(shareLink)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              Twitter
+            </a>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Join me on VA Jobs Online! ${shareLink}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              WhatsApp
             </a>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={shareLink}
+            onClick={(e) => e.currentTarget.select()}
+            className="flex-1 rounded-md border bg-muted px-3 py-2 text-sm font-mono text-muted-foreground"
+          />
+          <Button variant="outline" size="sm" onClick={handleCopy}>
+            {copied ? 'Copied!' : 'Copy Link'}
+          </Button>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
           <span className="text-sm text-muted-foreground">Connects earned from referrals</span>

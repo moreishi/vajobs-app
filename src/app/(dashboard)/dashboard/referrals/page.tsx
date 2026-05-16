@@ -7,7 +7,7 @@ import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ReferralInviteForm } from '@/components/dashboard/referral-invite-form'
 import { ReferralFAQ } from '@/components/dashboard/referral-faq'
 import { getReferralConversionStats } from '@/lib/referrals'
-import { getReferralRewardsHistory } from '@/actions/referrals'
+import { getReferralRewardsHistory, getReferralInvites } from '@/actions/referrals'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +17,7 @@ export default async function ReferralsPage() {
 
   const userId = session.user.id
 
-  const [user, referredUsers, rewardAgg, rewardHistory] = await Promise.all([
+  const [user, referredUsers, rewardAgg, rewardHistory, referralInvites] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { referralCode: true },
@@ -41,6 +41,7 @@ export default async function ReferralsPage() {
       _sum: { amount: true },
     }),
     getReferralRewardsHistory(userId),
+    getReferralInvites(userId),
   ])
 
   const totalEarnings = rewardAgg._sum.amount ?? 0
@@ -77,7 +78,7 @@ export default async function ReferralsPage() {
         </div>
       )}
 
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Referred Users</CardTitle>
@@ -117,9 +118,35 @@ export default async function ReferralsPage() {
         </CardContent>
       </Card>
 
+      {/* Sent Invites */}
+      {referralInvites.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Sent Invites</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y">
+              {referralInvites.map((inv) => (
+                <div key={inv.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{inv.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Sent {new Date(inv.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={`ml-2 shrink-0 text-xs font-medium ${inv.status === 'signed_up' ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                    {inv.status === 'signed_up' ? 'Signed up' : 'Invite sent'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Rewards History */}
       {rewardHistory.length > 0 && (
-        <Card className="mt-8">
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle>Rewards History</CardTitle>
           </CardHeader>
@@ -156,7 +183,7 @@ export default async function ReferralsPage() {
       )}
 
       {/* FAQ */}
-      <div className="mt-8">
+      <div>
         <ReferralFAQ />
       </div>
     </>

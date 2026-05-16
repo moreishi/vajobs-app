@@ -47,6 +47,8 @@ model User {
   referralRewardsGiven    ReferralReward[]    @relation("RewardsGiven")
   referralRewardsReceived ReferralReward[]    @relation("RewardsReceived")
   referralMilestones      ReferralMilestone[] @relation("ReferralMilestones")
+  sentReferralInvites     ReferralInvite[]    @relation("SentInvites")
+  redeemedReferralInvites ReferralInvite[]    @relation("RedeemedInvites")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -591,4 +593,19 @@ model ReferralMilestone {
 
   @@unique([referrerId, milestone])
   @@index([referrerId])
+}
+
+model ReferralInvite {
+  id         String   @id @default(cuid())
+  referrerId String
+  email      String
+  status     String   @default("sent")
+  refereeId  String?
+  createdAt  DateTime @default(now())
+
+  referrer   User     @relation("SentInvites", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee    User?    @relation("RedeemedInvites", fields: [refereeId], references: [id])
+
+  @@index([referrerId])
+  @@index([email])
 }

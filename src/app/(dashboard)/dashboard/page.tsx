@@ -8,6 +8,7 @@ import { ApplicationStatusBadge } from '@/components/applications/application-st
 import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
 import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ensureReferralCode } from '@/actions/referrals'
+import { getReferralConversionStats } from '@/lib/referrals'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -48,7 +49,7 @@ export default async function DashboardPage() {
   }
 
   if (role === 'talent') {
-    const [u, pendingApps, interviews, acceptedApps, referralEarnings] = await Promise.all([
+    const [u, pendingApps, interviews, acceptedApps, referralEarnings, referredUsers] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { connects: true, referralCode: true },
@@ -66,11 +67,21 @@ export default async function DashboardPage() {
         where: { referrerId: userId },
         _sum: { amount: true },
       }),
+      prisma.user.findMany({
+        where: { referredById: userId },
+        select: {
+          referralRewardsReceived: {
+            where: { referrerId: userId },
+            select: { amount: true },
+          },
+        },
+      }),
     ])
     const connects = u?.connects ?? 0
     let referralCode = u?.referralCode
     if (!referralCode) referralCode = await ensureReferralCode()
     const totalReferralEarnings = referralEarnings._sum.amount ?? 0
+    const conversionStats = getReferralConversionStats(referredUsers)
 
     return (
       <>
@@ -117,11 +128,12 @@ export default async function DashboardPage() {
         </Card>
 
         {referralCode && (
-          <div className="mb-8">
+          <div>
             <ReferralCard
               referralCode={referralCode}
               referralEarnings={totalReferralEarnings}
               baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+              conversionStats={conversionStats}
             />
           </div>
         )}
@@ -130,7 +142,7 @@ export default async function DashboardPage() {
   }
 
   // ── Client / Admin dashboard ──
-  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned, activeSubscription, currentUser, referralEarnings] = await Promise.all([
+  const [jobPosts, totalAppsResult, pendingReview, recentApps, hired, interviewsUpcoming, connectsEarned, activeSubscription, currentUser, referralEarnings, clientReferredUsers] = await Promise.all([
     prisma.jobPost.findMany({
       where: { posterId: userId },
       select: { id: true, title: true, status: true, createdAt: true, _count: { select: { applications: true } } },
@@ -203,10 +215,20 @@ export default async function DashboardPage() {
       where: { referrerId: userId },
       _sum: { amount: true },
     }),
+    prisma.user.findMany({
+      where: { referredById: userId },
+      select: {
+        referralRewardsReceived: {
+          where: { referrerId: userId },
+          select: { amount: true },
+        },
+      },
+    }),
   ])
   let clientReferralCode = currentUser?.referralCode
   if (!clientReferralCode) clientReferralCode = await ensureReferralCode()
   const totalClientReferralEarnings = referralEarnings._sum.amount ?? 0
+  const clientConversionStats = getReferralConversionStats(clientReferredUsers)
 
   const activeJobs = jobPosts.filter(j => j.status === 'open').length
   const totalConnectsEarned = connectsEarned._sum.biddingConnects ?? 0
@@ -310,7 +332,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent Applications */}
-      <Card className="mb-6">
+      <Card className="mb-8">
         <CardHeader><CardTitle>Recent Applications</CardTitle></CardHeader>
         <CardContent>
           {recentApps.length > 0 ? (
@@ -335,7 +357,7 @@ export default async function DashboardPage() {
       </Card>
 
       {/* My Job Posts */}
-      <Card className="mb-6">
+      <Card className="mb-8">
         <CardHeader><CardTitle>My Job Posts</CardTitle></CardHeader>
         <CardContent>
           {jobPosts.length > 0 ? (
@@ -388,7 +410,7 @@ export default async function DashboardPage() {
 
       {/* Hired Talents */}
       {hired.length > 0 && (
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Hired Talents</CardTitle>
@@ -413,11 +435,12 @@ export default async function DashboardPage() {
       )}
 
       {clientReferralCode && (
-        <div className="mb-8">
+        <div>
           <ReferralCard
             referralCode={clientReferralCode}
             referralEarnings={totalClientReferralEarnings}
             baseUrl={process.env.NEXT_PUBLIC_URL || process.env.AUTH_URL || 'http://localhost:3000'}
+            conversionStats={clientConversionStats}
           />
         </div>
       )}

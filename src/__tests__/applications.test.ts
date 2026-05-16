@@ -11,7 +11,8 @@ vi.mock('@/lib/prisma', () => ({
     connectTransaction: { create: vi.fn() },
     notification: { create: vi.fn(), count: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     engagement: { upsert: vi.fn() },
-    referralReward: { findUnique: vi.fn(), create: vi.fn() },
+    referralReward: { findUnique: vi.fn(), create: vi.fn(), count: vi.fn() },
+    referralMilestone: { findMany: vi.fn().mockResolvedValue([]), create: vi.fn() },
     $transaction: vi.fn(),
   },
 }))

@@ -20,6 +20,10 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       create: vi.fn(),
     },
+    referralInvite: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
     connectTransaction: {
       create: vi.fn(),
     },
@@ -395,7 +399,6 @@ describe('sendReferralInvite', () => {
     expect(buildEmailHtml).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ url: 'http://localhost:3000/hello-va?ref=ABC12345' }),
-      expect.any(Object),
     )
   })
 
@@ -413,7 +416,6 @@ describe('sendReferralInvite', () => {
     expect(buildEmailHtml).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ url: 'http://localhost:3000/hello-startup?ref=XYZ99999' }),
-      expect.any(Object),
     )
   })
 
@@ -429,6 +431,82 @@ describe('sendReferralInvite', () => {
     const result = await sendReferralInvite('friend@example.com', 'http://localhost:3000')
 
     expect(result).toEqual({ error: 'Failed to send invite' })
+  })
+
+  it('stores a ReferralInvite record on successful send', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'user-id',
+      referralCode: 'ABC12345',
+      name: 'Inviter',
+      role: 'talent',
+    } as any)
+
+    await sendReferralInvite('stored@example.com', 'http://localhost:3000')
+
+    expect(prisma.referralInvite.create).toHaveBeenCalledWith({
+      data: {
+        referrerId: 'user-id',
+        email: 'stored@example.com',
+        status: 'sent',
+      },
+    })
+  })
+
+  it('does not store invite record when send fails', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'user-id',
+      referralCode: 'ABC12345',
+      name: 'Inviter',
+      role: 'talent',
+    } as any)
+    vi.mocked(sendEmail).mockRejectedValueOnce(new Error('fail'))
+
+    await sendReferralInvite('fail@example.com', 'http://localhost:3000')
+
+    expect(prisma.referralInvite.create).not.toHaveBeenCalled()
+  })
+})
+
+describe('getReferralInvites', () => {
+  let getReferralInvites: typeof import('@/actions/referrals').getReferralInvites
+
+  beforeEach(async () => {
+    const mod = await import('@/actions/referrals')
+    getReferralInvites = mod.getReferralInvites
+  })
+
+  it('returns sent invites with status', async () => {
+    vi.mocked(prisma.referralInvite.findMany).mockResolvedValueOnce([
+      {
+        id: 'inv1',
+        email: 'friend@test.com',
+        status: 'sent',
+        createdAt: new Date('2026-05-10'),
+        referee: null,
+      },
+      {
+        id: 'inv2',
+        email: 'joined@test.com',
+        status: 'signed_up',
+        createdAt: new Date('2026-05-01'),
+        referee: { name: 'Joined User', email: 'joined@test.com' },
+      },
+    ] as any)
+
+    const result = await getReferralInvites('referrer-id')
+
+    expect(result).toHaveLength(2)
+    expect(result[0].status).toBe('sent')
+    expect(result[1].status).toBe('signed_up')
+    expect(result[1].refereeName).toBe('Joined User')
+  })
+
+  it('returns empty array when no invites sent', async () => {
+    vi.mocked(prisma.referralInvite.findMany).mockResolvedValueOnce([])
+
+    const result = await getReferralInvites('referrer-id')
+
+    expect(result).toEqual([])
   })
 })
 

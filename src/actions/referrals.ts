@@ -227,8 +227,39 @@ export async function sendReferralInvite(
         { text: 'Accept Invite', url: registerUrl },
       ),
     })
+
+    await prisma.referralInvite.create({
+      data: {
+        referrerId: user.id,
+        email: email.trim(),
+        status: 'sent',
+      },
+    })
+
     return { success: true }
   } catch {
     return { error: 'Failed to send invite' }
   }
+}
+
+export async function getReferralInvites(referrerId: string) {
+  const invites = await prisma.referralInvite.findMany({
+    where: { referrerId },
+    select: {
+      id: true,
+      email: true,
+      status: true,
+      createdAt: true,
+      referee: { select: { name: true, email: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  })
+  return invites.map((inv) => ({
+    id: inv.id,
+    email: inv.email,
+    status: inv.status,
+    createdAt: inv.createdAt,
+    refereeName: inv.referee?.name ?? null,
+    refereeEmail: inv.referee?.email ?? null,
+  }))
 }
