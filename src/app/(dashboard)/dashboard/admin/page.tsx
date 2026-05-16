@@ -90,6 +90,8 @@ export default async function AdminDashboardPage() {
     referralCount,
     totalRewards,
     activeReferrers,
+
+    appsWithStatus,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.groupBy({ by: ['role'], _count: true }),
@@ -197,6 +199,12 @@ export default async function AdminDashboardPage() {
     prisma.user.count({ where: { referredById: { not: null } } }),
     prisma.referralReward.aggregate({ _sum: { amount: true } }),
     prisma.referralReward.groupBy({ by: ['referrerId'], _count: true }),
+
+    // Application status trend (last 6 months)
+    prisma.application.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true, status: true },
+    }),
   ])
 
   const membershipEnabled = await getMembershipEnabled()
@@ -373,6 +381,36 @@ export default async function AdminDashboardPage() {
       ],
     }
   })
+
+  // Monthly application status trend (last 6 months)
+  const appStatusColors: Record<string, string> = {
+    pending: '#f59e0b',
+    interview: '#3b82f6',
+    accepted: '#22c55e',
+    rejected: '#ef4444',
+    withdrawn: '#6b7280',
+    reviewed: '#8b5cf6',
+  }
+  const monthlyAppStatus = last6Months.map((monthStart) => {
+    const nextMonth = new Date(monthStart)
+    nextMonth.setMonth(nextMonth.getMonth() + 1)
+    const monthApps = appsWithStatus.filter((a) => {
+      const c = new Date(a.createdAt)
+      return c >= monthStart && c < nextMonth
+    })
+    const statuses = [...new Set(appsWithStatus.map((a) => a.status))]
+    return {
+      label: monthStart.toLocaleDateString(undefined, { month: 'short' }),
+      values: statuses.map((s) => ({
+        name: s,
+        value: monthApps.filter((a) => a.status === s).length,
+      })),
+    }
+  })
+  const appStatusSeries = [...new Set(appsWithStatus.map((a) => a.status))].map((s) => ({
+    name: s,
+    color: appStatusColors[s] || '#6b7280',
+  }))
 
   // Plan distribution
   const planDist = subsByPlan.map((g) => {
@@ -667,11 +705,31 @@ export default async function AdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Daily Signups */}
+        {/* Application Status Trend */}
         <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Signups (Last 14 Days)</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Application Status (Monthly)</CardTitle>
+            {appStatusSeries.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                {appStatusSeries.map((s) => (
+                  <span key={s.name} className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: s.color }} />
+                    {s.name.charAt(0).toUpperCase() + s.name.slice(1)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </CardHeader>
           <CardContent>
-            <BarChart data={dailySignups} height={100} />
+            {appsWithStatus.length > 0 ? (
+              <GroupedBarChart
+                data={monthlyAppStatus}
+                series={appStatusSeries}
+                height={100}
+              />
+            ) : (
+              <p className="py-8 text-center text-sm text-muted-foreground">No applications yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -829,6 +887,7 @@ export default async function AdminDashboardPage() {
               <Link href="/dashboard/admin/users" className={buttonVariants({ size: 'sm' })}>Manage Users</Link>
               <Link href="/dashboard/admin/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Jobs</Link>
               <Link href="/dashboard/admin/reviews" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Manage Reviews</Link>
+              <Link href="/dashboard/admin/engagements" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Engagements</Link>
               <Link href="/dashboard/applications" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Applications</Link>
               <Link href="/dashboard/admin/payments" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Payment Settings</Link>
               <Link href="/dashboard/admin/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Subscriptions</Link>
