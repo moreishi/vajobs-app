@@ -12,85 +12,116 @@ type EmailJob = {
   baseUrl: string
 }
 
-const queue: EmailJob[] = []
-let processing = false
+export async function enqueueEmail(job: EmailJob) {
+  if (!process.env.RESEND_API_KEY) return
 
-async function processQueue() {
-  if (processing || queue.length === 0) return
-  processing = true
+  await prisma.emailLog.create({
+    data: {
+      userId: job.userId,
+      email: '',
+      type: job.type,
+      subject: job.title,
+      status: 'pending',
+    },
+  })
+}
 
-  while (queue.length > 0) {
-    const job = queue.shift()!
+export async function processPendingEmails(limit = 20) {
+  if (!process.env.RESEND_API_KEY) return { processed: 0, failed: 0 }
+
+  const pending = await prisma.emailLog.findMany({
+    where: { status: 'pending' },
+    take: limit,
+    orderBy: { createdAt: 'asc' },
+  })
+
+  let processed = 0
+  let failed = 0
+
+  for (const log of pending) {
     try {
-      await processJob(job)
+      await processLogEntry(log)
+      processed++
     } catch (err) {
-      logger.error('Email Worker', `Job failed: ${job.type} -> ${job.userId}`, err instanceof Error ? err.stack : err)
+      logger.error('Email Worker', `Failed to process log ${log.id}`, err instanceof Error ? err.stack : err)
+      failed++
     }
   }
 
-  processing = false
+  return { processed, failed }
 }
 
-async function processJob(job: EmailJob) {
-  if (!process.env.RESEND_API_KEY) return
+async function processLogEntry(log: { id: string; userId: string | null; type: string; subject: string }) {
+  if (!log.userId) {
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'failed', error: 'No userId' },
+    })
+    return
+  }
 
   const user = await prisma.user.findUnique({
-    where: { id: job.userId },
+    where: { id: log.userId },
     select: { email: true },
   })
-  if (!user?.email) return
+  if (!user?.email) {
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'failed', error: 'User has no email' },
+    })
+    return
+  }
 
-  // Check if user has opted out of this notification type
+  // Check notification preferences
   const pref = await prisma.notificationPreference.findUnique({
-    where: { userId_type: { userId: job.userId, type: job.type } },
+    where: { userId_type: { userId: log.userId, type: log.type } },
   })
-  const emailEnabled = pref?.email ?? defaultEmailEnabled(job.type)
-  if (!emailEnabled) return
+  const emailEnabled = pref?.email ?? defaultEmailEnabled(log.type)
+  if (!emailEnabled) {
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'skipped', error: 'Email notifications disabled' },
+    })
+    return
+  }
 
-  const cta = job.link
-    ? { text: 'View on Talent Hub', url: `${job.baseUrl}${job.link}` }
-    : undefined
-  const unsubscribeUrl = `${job.baseUrl}/dashboard/settings/notifications`
+  // Get the notification body for richer email content
+  const notification = await prisma.notification.findFirst({
+    where: { userId: log.userId, type: log.type },
+    orderBy: { createdAt: 'desc' },
+    select: { body: true, link: true },
+  })
+
+  const baseUrl = process.env.AUTH_URL || 'http://localhost:3000'
+  const link = notification?.link
+  const bodyText = notification?.body || log.subject
+  const cta = link ? { text: 'View on VA Jobs Online', url: `${baseUrl}${link}` } : undefined
+  const unsubscribeUrl = `${baseUrl}/dashboard/settings/notifications`
 
   try {
     await sendEmail({
       to: user.email,
-      subject: `[Talent Hub] ${job.title}`,
-      html: buildEmailHtml(job.body, cta, unsubscribeUrl),
+      subject: `[VA Jobs Online] ${log.subject}`,
+      html: buildEmailHtml(bodyText, cta, unsubscribeUrl),
     })
 
-    await prisma.emailLog.create({
+    await prisma.emailLog.update({
+      where: { id: log.id },
       data: {
-        userId: job.userId,
-        email: user.email,
-        type: job.type,
-        subject: job.title,
         status: 'sent',
+        email: user.email,
       },
     })
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error'
 
-    await prisma.emailLog.create({
+    await prisma.emailLog.update({
+      where: { id: log.id },
       data: {
-        userId: job.userId,
-        email: user.email,
-        type: job.type,
-        subject: job.title,
         status: 'failed',
+        email: user.email,
         error: errorMsg,
       },
     })
   }
-}
-
-export function enqueueEmail(job: EmailJob) {
-  queue.push(job)
-  if (!processing) {
-    setImmediate(processQueue)
-  }
-}
-
-export function getQueueLength() {
-  return queue.length
 }

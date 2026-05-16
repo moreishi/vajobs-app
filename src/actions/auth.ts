@@ -152,14 +152,14 @@ export async function updateAccount(_prevState: { error?: string; success?: bool
   if (!session?.user?.id) return { error: 'Not authenticated' }
 
   const name = (formData.get('name') as string)?.trim() || null
-  const email = (formData.get('email') as string)?.trim()
+  const emailInput = (formData.get('email') as string)?.trim()
   const currentPassword = formData.get('currentPassword') as string
   const newPassword = formData.get('newPassword') as string
 
-  if (!email) return { error: 'Email is required' }
-
+  // Fall back to current email when field is disabled (not submitted)
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
   if (!user) return { error: 'User not found' }
+  const email = emailInput || user.email
 
   // Check email uniqueness if changing
   if (email !== user.email) {

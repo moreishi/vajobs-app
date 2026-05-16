@@ -11,6 +11,8 @@ export default async function SettingsPage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
+      name: true,
+      email: true,
       referralCode: true,
       referredBy: { select: { name: true, email: true } },
       referralRewardsGiven: { select: { amount: true } },
@@ -21,7 +23,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-8">
-      <SettingsForm />
+      <SettingsForm name={user?.name ?? null} email={user?.email ?? ''} />
 
       {user?.referralCode && (
         <Card>

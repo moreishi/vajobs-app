@@ -110,7 +110,7 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        <Card>
+        <Card className="mb-8">
           <CardHeader><CardTitle>Quick Links</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Link href="/dashboard/messages" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Messages</Link>

@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import { getEmailLogs, getEmailLogStats } from '@/actions/admin'
 import { EmailLogFilters } from '@/components/admin/email-log-filters'
-import { CheckCircleIcon, XCircleIcon, MailIcon } from 'lucide-react'
+import { RetryEmailButton } from '@/components/admin/retry-email-button'
+import { ProcessPendingButton } from '@/components/admin/process-pending-button'
+import { CheckCircleIcon, XCircleIcon, MailIcon, ClockIcon } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,18 +46,21 @@ export default async function EmailLogsPage({
       >
         &larr; Admin Dashboard
       </Link>
-      <h1 className="mb-8 text-2xl font-bold">Email Logs</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Email Logs</h1>
+        <ProcessPendingButton />
+      </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-4">
+      <div className="mb-8 grid gap-4 sm:grid-cols-5">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Sent</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle></CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{stats?.total ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Delivered</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Sent</CardTitle></CardHeader>
           <CardContent className="flex items-center gap-2">
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats?.sent ?? 0}</p>
             <CheckCircleIcon className="h-5 w-5 text-green-500" />
@@ -66,6 +71,13 @@ export default async function EmailLogsPage({
           <CardContent className="flex items-center gap-2">
             <p className="text-3xl font-bold text-destructive">{stats?.failed ?? 0}</p>
             <XCircleIcon className="h-5 w-5 text-destructive" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle></CardHeader>
+          <CardContent className="flex items-center gap-2">
+            <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{stats?.pending ?? 0}</p>
+            <ClockIcon className="h-5 w-5 text-amber-500" />
           </CardContent>
         </Card>
         <Card>
@@ -94,20 +106,30 @@ export default async function EmailLogsPage({
         <CardContent>
           {logs.length > 0 ? (
             <div className="overflow-x-auto">
-              <div className="min-w-[600px] divide-y">
-                <div className="grid grid-cols-5 gap-4 py-2 text-xs font-medium text-muted-foreground">
+              <div className="min-w-[650px] divide-y">
+                <div className="grid grid-cols-6 gap-4 py-2 text-xs font-medium text-muted-foreground">
                   <span>Status</span>
                   <span className="col-span-2">Email / Subject</span>
                   <span>Type</span>
                   <span>Date</span>
+                  <span />
                 </div>
                 {logs.map((log) => (
-                  <div key={log.id} className="grid grid-cols-5 gap-4 py-3 items-center">
+                  <div key={log.id} className="grid grid-cols-6 gap-4 py-3 items-center">
                     <div>
                       {log.status === 'sent' ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                           <CheckCircleIcon className="h-3 w-3" />
                           Sent
+                        </span>
+                      ) : log.status === 'pending' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          <ClockIcon className="h-3 w-3" />
+                          Pending
+                        </span>
+                      ) : log.status === 'skipped' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 dark:bg-gray-900/30 dark:text-gray-400">
+                          Skipped
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400" title={log.error || ''}>
@@ -118,9 +140,12 @@ export default async function EmailLogsPage({
                     </div>
                     <div className="col-span-2 min-w-0">
                       <p className="truncate text-sm">{log.subject}</p>
-                      <p className="truncate text-xs text-muted-foreground">{log.email}</p>
+                      <p className="truncate text-xs text-muted-foreground">{log.email || '—'}</p>
                       {log.status === 'failed' && log.error && (
                         <p className="truncate text-xs text-destructive mt-0.5">{log.error}</p>
+                      )}
+                      {log.status === 'skipped' && log.error && (
+                        <p className="truncate text-xs text-muted-foreground mt-0.5">{log.error}</p>
                       )}
                     </div>
                     <div>
@@ -132,6 +157,11 @@ export default async function EmailLogsPage({
                       {new Date(log.createdAt).toLocaleDateString()}
                       <br />
                       {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div>
+                      {log.status === 'failed' && (
+                        <RetryEmailButton emailLogId={log.id} />
+                      )}
                     </div>
                   </div>
                 ))}

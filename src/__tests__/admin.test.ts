@@ -246,10 +246,11 @@ describe('getEmailLogStats', () => {
     vi.mocked(prisma.emailLog.count).mockResolvedValueOnce(100)
     vi.mocked(prisma.emailLog.count).mockResolvedValueOnce(90)
     vi.mocked(prisma.emailLog.count).mockResolvedValueOnce(10)
+    vi.mocked(prisma.emailLog.count).mockResolvedValueOnce(0)
     vi.mocked(prisma.emailLog.count).mockResolvedValueOnce(25)
 
     const result = await getEmailLogStats()
 
-    expect(result).toEqual({ total: 100, sent: 90, failed: 10, recentCount: 25 })
+    expect(result).toEqual({ total: 100, sent: 90, failed: 10, pending: 0, recentCount: 25 })
   })
 })

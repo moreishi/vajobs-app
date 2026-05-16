@@ -6,7 +6,12 @@ import { updateAccount } from '@/actions/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 
-export function SettingsForm() {
+interface SettingsFormProps {
+  name: string | null
+  email: string
+}
+
+export function SettingsForm({ name, email }: SettingsFormProps) {
   const [state, action, pending] = useActionState(updateAccount, { error: '' })
 
   if (state.success) {
@@ -42,6 +47,7 @@ export function SettingsForm() {
               id="name"
               name="name"
               type="text"
+              defaultValue={name ?? ''}
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               placeholder="Your name"
             />
@@ -53,10 +59,11 @@ export function SettingsForm() {
               id="email"
               name="email"
               type="email"
-              required
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="you@example.com"
+              value={email}
+              disabled
+              className="flex h-9 w-full cursor-not-allowed rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground shadow-sm"
             />
+            <p className="mt-1 text-xs text-muted-foreground">Email cannot be changed.</p>
           </div>
 
           <hr className="my-2" />
