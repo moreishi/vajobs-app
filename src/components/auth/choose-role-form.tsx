@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import { chooseRole } from '@/actions/choose-role'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const initialState = { error: undefined as string | undefined }
-
 export function ChooseRoleForm() {
-  const [state, formAction] = useFormState(chooseRole, initialState)
+  const wrappedAction = async (_prev: { error?: string } | undefined, formData: FormData) => {
+    return chooseRole(formData)
+  }
+  const [state, formAction] = useActionState(wrappedAction, undefined)
   const [selected, setSelected] = useState('')
 
   return (
