@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { hash } from 'bcryptjs'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -254,7 +255,10 @@ async function main() {
 
   console.log('  Cleared existing data')
 
-  const pw = await hash('password', 12)
+  const isProd = process.env.NODE_ENV === 'production'
+
+  const rawPassword = isProd ? crypto.randomBytes(24).toString('hex') : 'password'
+  const pw = await hash(rawPassword, 12)
   const now = new Date()
 
   const admin = await prisma.user.create({
@@ -267,10 +271,41 @@ async function main() {
       connects: 9999,
     },
   })
-  console.log(`  Created admin: admin@vajobs.online / password`)
+
+  if (isProd) {
+    console.log(`\n  ╔══════════════════════════════════════════════════╗`)
+    console.log(`  ║  Admin account created                          ║`)
+    console.log(`  ║  Email: admin@vajobs.online                     ║`)
+    console.log(`  ║  Password: ${rawPassword}              ║`)
+    console.log(`  ╚══════════════════════════════════════════════════╝\n`)
+
+    if (process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: process.env.EMAIL_FROM,
+            to: 'admin@vajobs.online',
+            subject: 'Admin account created - VA Jobs Online',
+            html: `<p>Your admin account has been created.</p><p><strong>Email:</strong> admin@vajobs.online</p><p><strong>Password:</strong> <code>${rawPassword}</code></p><p>Please change your password after logging in.</p>`,
+          }),
+        })
+        console.log('  Admin credentials emailed to admin@vajobs.online')
+      } catch {}
+    }
+  } else {
+    console.log(`  Created admin: admin@vajobs.online / password`)
+  }
 
   const clientRecords: { id: string; name: string }[] = []
-  for (const c of CLIENTS) {
+  const talentRecords: { id: string; name: string }[] = []
+
+  if (!isProd) {
+    for (const c of CLIENTS) {
     const record = await prisma.user.create({
       data: {
         email: c.email,
@@ -285,23 +320,23 @@ async function main() {
     console.log(`  Created client: ${c.email} / password`)
   }
 
-  const talentRecords: { id: string; name: string }[] = []
-  for (const t of TALENTS) {
-    const record = await prisma.user.create({
-      data: {
-        email: t.email,
-        password: pw,
-        role: 'talent',
-        name: t.name,
-        emailVerified: now,
-        connects: 50,
-      },
-    })
-    talentRecords.push({ id: record.id, name: t.name })
-    console.log(`  Created talent: ${t.email} / password`)
-  }
+    for (const t of TALENTS) {
+      const record = await prisma.user.create({
+        data: {
+          email: t.email,
+          password: pw,
+          role: 'talent',
+          name: t.name,
+          emailVerified: now,
+          connects: 50,
+        },
+      })
+      talentRecords.push({ id: record.id, name: t.name })
+      console.log(`  Created talent: ${t.email} / password`)
+    }
+  } // end dev-only section
 
-  // Seed notification preferences for all users
+  // Seed notification preferences for all users (admin + any dev users)
   const allUsers = [admin, ...clientRecords, ...talentRecords]
   for (const u of allUsers) {
     await prisma.notificationPreference.createMany({
@@ -314,26 +349,29 @@ async function main() {
   }
   console.log(`  Seeded notification preferences for ${allUsers.length} users`)
 
-  const jobs = generateJobs()
-  let createdCount = 0
-  for (const j of jobs) {
-    const bp = JOB_BLUEPRINTS[createdCount >> 1] // integer division by 2
-    const client = clientRecords[j.posterIndex]
-    await prisma.jobPost.create({
-      data: {
-        title: j.title,
-        description: bp.description,
-        shortDescription: j.shortDescription,
-        location: 'Remote',
-        type: 'full-time',
-        salaryRange: j.salaryRange,
-        skills: JSON.stringify(j.skills),
-        status: 'open',
-        posterId: client.id,
-        posterName: client.name,
-      },
-    })
-    createdCount++
+  if (!isProd) {
+    const jobs = generateJobs()
+    let createdCount = 0
+    for (const j of jobs) {
+      const bp = JOB_BLUEPRINTS[createdCount >> 1]
+      const client = clientRecords[j.posterIndex]
+      await prisma.jobPost.create({
+        data: {
+          title: j.title,
+          description: bp.description,
+          shortDescription: j.shortDescription,
+          location: 'Remote',
+          type: 'full-time',
+          salaryRange: j.salaryRange,
+          skills: JSON.stringify(j.skills),
+          status: 'open',
+          posterId: client.id,
+          posterName: client.name,
+        },
+      })
+      createdCount++
+    }
+    console.log(`  Created ${createdCount} job posts (${JOB_BLUEPRINTS.length} categories × 2 levels)`)
   }
 
   // Seed subscription plans (tiered pricing)
@@ -378,24 +416,26 @@ async function main() {
   }
   console.log(`  Created ${plans.length} subscription plans`)
 
-  // Give first client a Starter subscription
-  const starterPlan = await prisma.subscriptionPlan.findFirstOrThrow({
-    where: { name: 'Starter' },
-  })
-  const periodStart = new Date()
-  const periodEnd = new Date()
-  periodEnd.setMonth(periodEnd.getMonth() + 1)
-  await prisma.clientSubscription.create({
-    data: {
-      userId: clientRecords[2].id,
-      planId: starterPlan.id,
-      status: 'active',
-      currentPeriodStart: periodStart,
-      currentPeriodEnd: periodEnd,
-      autoRenew: true,
-    },
-  })
-  console.log('  Created active subscription for VA Talent Co.')
+  if (!isProd) {
+    // Give VA Talent Co. a Starter subscription (demo data)
+    const starterPlan = await prisma.subscriptionPlan.findFirstOrThrow({
+      where: { name: 'Starter' },
+    })
+    const periodStart = new Date()
+    const periodEnd = new Date()
+    periodEnd.setMonth(periodEnd.getMonth() + 1)
+    await prisma.clientSubscription.create({
+      data: {
+        userId: clientRecords[2].id,
+        planId: starterPlan.id,
+        status: 'active',
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+        autoRenew: true,
+      },
+    })
+    console.log('  Created active subscription for VA Talent Co.')
+  }
 
   await prisma.paymentSetting.upsert({
     where: { key: 'active_provider' },
@@ -403,8 +443,6 @@ async function main() {
     create: { key: 'active_provider', value: 'stripe' },
   })
   console.log('  Set default payment provider to Stripe')
-
-  console.log(`  Created ${createdCount} job posts (${JOB_BLUEPRINTS.length} categories × 2 levels)`)
 
   // Seed VA subscription plans
   const vaPlans = [
