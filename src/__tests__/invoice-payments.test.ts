@@ -110,7 +110,7 @@ describe('createInvoiceCheckoutSession', () => {
     vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce({ ...mockInvoice, status: 'paid' } as any)
 
     const result = await createInvoiceCheckoutSession('inv-1', 'stripe')
-    expect(result).toEqual({ error: 'Invoice is already paid' })
+    expect(result).toEqual({ error: 'Invoice is already paid or pending confirmation' })
   })
 
   it('returns error when provider not configured', async () => {

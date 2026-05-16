@@ -86,6 +86,7 @@ let terminateContract: typeof import('@/actions/contracts').terminateContract
 let getInvoices: typeof import('@/actions/invoices').getInvoices
 let createInvoice: typeof import('@/actions/invoices').createInvoice
 let markInvoicePaid: typeof import('@/actions/invoices').markInvoicePaid
+let confirmInvoiceReceipt: typeof import('@/actions/invoices').confirmInvoiceReceipt
 
 let getMilestones: typeof import('@/actions/milestones').getMilestones
 let createMilestone: typeof import('@/actions/milestones').createMilestone
@@ -105,6 +106,7 @@ beforeEach(async () => {
   getInvoices = inv.getInvoices
   createInvoice = inv.createInvoice
   markInvoicePaid = inv.markInvoicePaid
+  confirmInvoiceReceipt = inv.confirmInvoiceReceipt
 
   const m = await import('@/actions/milestones')
   getMilestones = m.getMilestones
@@ -471,7 +473,7 @@ describe('markInvoicePaid', () => {
     expect(result).toEqual({ error: 'Not authenticated' })
   })
 
-  it('marks invoice as paid when recipient', async () => {
+  it('sets status to paid_pending when client marks as paid', async () => {
     vi.mocked(auth).mockResolvedValueOnce(mockClient as any)
     vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce(mockInvoice as any)
     vi.mocked(prisma.invoice.update).mockResolvedValueOnce({} as any)
@@ -479,7 +481,7 @@ describe('markInvoicePaid', () => {
     const result = await markInvoicePaid('inv-1')
     expect(prisma.invoice.update).toHaveBeenCalledWith({
       where: { id: 'inv-1' },
-      data: { status: 'paid', paidAt: expect.any(Date) },
+      data: { status: 'paid_pending' },
     })
     expect(result).toEqual({ success: true })
   })
@@ -491,10 +493,66 @@ describe('markInvoicePaid', () => {
     expect(result).toEqual({ error: 'Invoice is already paid' })
   })
 
-  it('returns error when not authorized', async () => {
+  it('returns error when invoice already pending confirmation', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockClient as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce({ ...mockInvoice, status: 'paid_pending' } as any)
+    const result = await markInvoicePaid('inv-1')
+    expect(result).toEqual({ error: 'Invoice is already pending confirmation' })
+  })
+
+  it('returns error when talent tries to mark as paid', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockTalent as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce(mockInvoice as any)
+    const result = await markInvoicePaid('inv-1')
+    expect(result).toEqual({ error: 'Only the client can mark an invoice as paid' })
+  })
+
+  it('returns error when stranger tries to mark as paid', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'stranger' } } as any)
     vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce(mockInvoice as any)
     const result = await markInvoicePaid('inv-1')
-    expect(result).toEqual({ error: 'Not authorized' })
+    expect(result).toEqual({ error: 'Only the client can mark an invoice as paid' })
+  })
+})
+
+describe('confirmInvoiceReceipt', () => {
+  it('returns error when not authenticated', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(null)
+    const result = await confirmInvoiceReceipt('inv-1')
+    expect(result).toEqual({ error: 'Not authenticated' })
+  })
+
+  it('confirms receipt and sets status to paid', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockTalent as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce({ ...mockInvoice, status: 'paid_pending' } as any)
+    vi.mocked(prisma.invoice.update).mockResolvedValueOnce({} as any)
+
+    const result = await confirmInvoiceReceipt('inv-1')
+    expect(prisma.invoice.update).toHaveBeenCalledWith({
+      where: { id: 'inv-1' },
+      data: { status: 'paid', paidAt: expect.any(Date) },
+    })
+    expect(result).toEqual({ success: true })
+  })
+
+  it('returns error when client tries to confirm', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockClient as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce({ ...mockInvoice, status: 'paid_pending' } as any)
+    const result = await confirmInvoiceReceipt('inv-1')
+    expect(result).toEqual({ error: 'Only the talent can confirm receipt' })
+  })
+
+  it('returns error when invoice is not paid_pending', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockTalent as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce(mockInvoice as any)
+    const result = await confirmInvoiceReceipt('inv-1')
+    expect(result).toEqual({ error: 'Invoice is not pending confirmation' })
+  })
+
+  it('returns error when invoice not found', async () => {
+    vi.mocked(auth).mockResolvedValueOnce(mockTalent as any)
+    vi.mocked(prisma.invoice.findUnique).mockResolvedValueOnce(null)
+    const result = await confirmInvoiceReceipt('inv-1')
+    expect(result).toEqual({ error: 'Invoice not found' })
   })
 })

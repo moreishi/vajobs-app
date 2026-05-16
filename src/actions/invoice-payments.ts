@@ -39,7 +39,7 @@ export async function createInvoiceCheckoutSession(
 
   const isRecipient = invoice.toId === session.user.id
   if (!isRecipient) return { error: 'Only the invoice recipient can make payments' }
-  if (invoice.status === 'paid') return { error: 'Invoice is already paid' }
+  if (invoice.status === 'paid' || invoice.status === 'paid_pending') return { error: 'Invoice is already paid or pending confirmation' }
 
   if (!checkProviderConfigured(providerName)) {
     return { error: `${providerName} is not configured` }

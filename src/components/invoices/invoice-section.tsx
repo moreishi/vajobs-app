@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { createInvoice, markInvoicePaid } from '@/actions/invoices'
+import { createInvoice, markInvoicePaid, confirmInvoiceReceipt } from '@/actions/invoices'
 import { DollarSignIcon, ChevronDownIcon, ChevronUpIcon, PlusIcon, CheckIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { PaymentButton } from '@/components/invoices/payment-button'
@@ -69,7 +69,22 @@ export function InvoiceSection({ engagementId, contractId, contractActive, invoi
     if ('error' in res) {
       toast.error(res.error)
     } else {
-      toast.success('Invoice marked as paid')
+      toast.success('Marked as paid — awaiting confirmation')
+      setInvoices((prev) => prev.map((inv) =>
+        inv.id === invoiceId ? { ...inv, status: 'paid_pending' } : inv
+      ))
+      router.refresh()
+    }
+  }
+
+  async function handleConfirmReceipt(invoiceId: string) {
+    setIsLoading(true)
+    const res = await confirmInvoiceReceipt(invoiceId)
+    setIsLoading(false)
+    if ('error' in res) {
+      toast.error(res.error)
+    } else {
+      toast.success('Payment confirmed')
       setInvoices((prev) => prev.map((inv) =>
         inv.id === invoiceId ? { ...inv, status: 'paid', paidAt: new Date() } : inv
       ))
@@ -81,6 +96,7 @@ export function InvoiceSection({ engagementId, contractId, contractActive, invoi
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
       case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+      case 'paid_pending': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
       case 'overdue': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
       default: return 'bg-muted text-muted-foreground'
     }
@@ -174,7 +190,7 @@ export function InvoiceSection({ engagementId, contractId, contractActive, invoi
                         )}
                       </div>
                       <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(inv.status)}`}>
-                        {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        {inv.status === 'paid_pending' ? 'Pending confirmation' : inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
                       </span>
                     </div>
                     <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
@@ -184,13 +200,18 @@ export function InvoiceSection({ engagementId, contractId, contractActive, invoi
                       {inv.paidAt && <span>Paid: {new Date(inv.paidAt).toLocaleDateString()}</span>}
                     </div>
                     <div className="mt-2 flex gap-2">
-                      {inv.status === 'pending' && (isPayer || isSender) && (
+                      {inv.status === 'pending' && isPayer && (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleMarkPaid(inv.id)} disabled={isLoading}>
                           <CheckIcon className="mr-1 h-3 w-3" /> Mark as Paid
                         </Button>
                       )}
                       {inv.status === 'pending' && isPayer && (
                         <PaymentButton invoiceId={inv.id} />
+                      )}
+                      {inv.status === 'paid_pending' && isSender && (
+                        <Button size="sm" variant="default" className="h-7 text-xs" onClick={() => handleConfirmReceipt(inv.id)} disabled={isLoading}>
+                          <CheckIcon className="mr-1 h-3 w-3" /> Confirm Receipt
+                        </Button>
                       )}
                     </div>
                   </div>
