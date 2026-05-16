@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
 import { createNotification } from '@/actions/notifications'
+import { grantReferralReward } from '@/actions/referrals'
 import type { ApplicationStatus, InterviewStatus } from '@/types'
 
 const VALID_STATUSES: ApplicationStatus[] = ['pending', 'reviewed', 'interview', 'accepted', 'rejected']
@@ -28,7 +29,7 @@ export async function applyToJob(jobId: string, formData: FormData) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { connects: true },
+    select: { connects: true, referredById: true },
   })
   if (!user) return { error: 'User not found' }
 
@@ -70,6 +71,16 @@ export async function applyToJob(jobId: string, formData: FormData) {
       },
     }),
   ])
+
+  // Check for referral reward on first application
+  if (user.referredById) {
+    const applicationCount = await prisma.application.count({
+      where: { applicantId: session.user.id },
+    })
+    if (applicationCount === 1) {
+      await grantReferralReward(session.user.id, user.referredById, 'talent', 'submitting their first application')
+    }
+  }
 
   await createNotification({
     userId: job.posterId,

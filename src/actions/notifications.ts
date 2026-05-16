@@ -28,6 +28,7 @@ export type NotificationType =
   | 'milestone_rejected'
   | 'proposal_accepted'
   | 'proposal_updated'
+  | 'referral_reward'
 
 const EMAIL_TEMPLATES: Record<string, string> = {
   application_received: 'A new applicant has applied to your job posting.',
@@ -41,6 +42,7 @@ const EMAIL_TEMPLATES: Record<string, string> = {
   payment_completed: 'Your payment has been completed successfully.',
   subscription_cancelled: 'Your subscription has been cancelled.',
   subscription_renewal: 'Your subscription has been renewed.',
+  referral_reward: 'You received a referral bonus.',
 }
 
 export async function createNotification({

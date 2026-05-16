@@ -5,11 +5,21 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
     jobPost: {
       create: vi.fn(),
       createMany: vi.fn(),
+      count: vi.fn(),
     },
+    connectTransaction: {
+      create: vi.fn(),
+    },
+    referralReward: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -19,6 +29,10 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
+}))
+
+vi.mock('@/actions/notifications', () => ({
+  createNotification: vi.fn(),
 }))
 
 const { prisma } = await import('@/lib/prisma')
@@ -220,6 +234,68 @@ describe('createJob', () => {
     expect(prisma.jobPost.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ status: 'draft' }),
     })
+  })
+
+  it('grants referral reward on first job post when referred', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'client-id',
+      email: 'client@example.com',
+      name: null,
+      referredById: 'referrer-id',
+    } as any)
+    vi.mocked(prisma.jobPost.create).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.jobPost.count).mockResolvedValueOnce(1)
+
+    const formData = new FormData()
+    formData.set('title', 'Senior Frontend Developer')
+    formData.set('description', 'We are looking for an experienced frontend developer to join our team building modern web applications.')
+    formData.set('type', 'full-time')
+
+    await createJob(formData)
+
+    expect(prisma.jobPost.count).toHaveBeenCalledWith({
+      where: { posterId: 'client-id' },
+    })
+  })
+
+  it('does not grant reward on subsequent job posts', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'client-id',
+      email: 'client@example.com',
+      name: null,
+      referredById: 'referrer-id',
+    } as any)
+    vi.mocked(prisma.jobPost.create).mockResolvedValueOnce({} as any)
+    vi.mocked(prisma.jobPost.count).mockResolvedValueOnce(2)
+
+    const formData = new FormData()
+    formData.set('title', 'Senior Dev')
+    formData.set('description', 'We are looking for an experienced developer to join our team building modern web applications.')
+    formData.set('type', 'full-time')
+
+    await createJob(formData)
+
+    expect(prisma.referralReward.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('does not grant reward for non-referred client', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'client-id', role: 'client' } } as any)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: 'client-id',
+      email: 'client@example.com',
+      name: null,
+      referredById: null,
+    } as any)
+    vi.mocked(prisma.jobPost.create).mockResolvedValueOnce({} as any)
+
+    const formData = new FormData()
+    formData.set('title', 'Senior Dev')
+    formData.set('description', 'We are looking for an experienced developer to join our team building modern web applications.')
+    formData.set('type', 'full-time')
+
+    await createJob(formData)
   })
 
   it('preserves skills order from input', async () => {

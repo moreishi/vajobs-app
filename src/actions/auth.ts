@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import crypto from 'crypto'
 import { hash } from 'bcryptjs'
 import { auth, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -67,10 +68,25 @@ export async function signUp(formData: FormData) {
     return { error: 'An account with this email already exists' }
   }
 
+  // Validate referral code if provided
+  const referralCodeInput = formData.get('referralCode') as string | null
+  let referredById: string | null = null
+  if (referralCodeInput) {
+    const referrer = await prisma.user.findUnique({
+      where: { referralCode: referralCodeInput.trim().toUpperCase() },
+      select: { id: true },
+    })
+    if (!referrer) {
+      return { error: 'Invalid referral code' }
+    }
+    referredById = referrer.id
+  }
+
   const hashedPassword = await hash(password, 12)
+  const userReferralCode = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
 
   const user = await prisma.user.create({
-    data: { email, password: hashedPassword, role, connects: 50 },
+    data: { email, password: hashedPassword, role, connects: 50, referralCode: userReferralCode, referredById },
   })
 
   // Seed default notification preferences (opt-out for high-frequency types)

@@ -4,13 +4,14 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     jobPost: { findUnique: vi.fn() },
-    application: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
+    application: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), count: vi.fn() },
     conversation: { findUnique: vi.fn(), create: vi.fn() },
     message: { create: vi.fn() },
     interview: { update: vi.fn(), upsert: vi.fn() },
     connectTransaction: { create: vi.fn() },
     notification: { create: vi.fn(), count: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     engagement: { upsert: vi.fn() },
+    referralReward: { findUnique: vi.fn(), create: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -194,6 +195,55 @@ describe('applyToJob', () => {
     const { redirect } = await import('next/navigation')
     expect(revalidatePath).toHaveBeenCalled()
     expect(redirect).toHaveBeenCalledWith('/dashboard/applications')
+  })
+
+  it('grants referral reward on first application when referred', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(mockJob)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ connects: 10, referredById: 'referrer-id' })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockApplication, {}, {}])
+    vi.mocked(prisma.application.count).mockResolvedValueOnce(1)
+
+    const formData = new FormData()
+    formData.set('coverLetter', 'I am a great fit!')
+    formData.set('biddingConnects', '5')
+
+    await applyToJob('job-id', formData)
+
+    expect(prisma.application.count).toHaveBeenCalledWith({
+      where: { applicantId: 'talent-id' },
+    })
+  })
+
+  it('does not grant reward on subsequent applications', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(mockJob)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ connects: 10, referredById: 'referrer-id' })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockApplication, {}, {}])
+    vi.mocked(prisma.application.count).mockResolvedValueOnce(2)
+
+    const formData = new FormData()
+    formData.set('biddingConnects', '1')
+
+    await applyToJob('job-id', formData)
+    // referralReward.findUnique should not be called since count !== 1
+    expect(prisma.referralReward.findUnique).not.toHaveBeenCalled()
+  })
+
+  it('does not grant reward for non-referred user', async () => {
+    vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'talent-id', role: 'talent' } } as any)
+    vi.mocked(prisma.jobPost.findUnique).mockResolvedValueOnce(mockJob)
+    vi.mocked(prisma.application.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ connects: 10, referredById: null })
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([mockApplication, {}, {}])
+
+    const formData = new FormData()
+    formData.set('biddingConnects', '1')
+
+    await applyToJob('job-id', formData)
+    // No referral reward checks
   })
 })
 

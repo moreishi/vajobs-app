@@ -101,6 +101,10 @@ export function RegisterForm() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="referralCode">Referral Code (optional)</Label>
+            <Input id="referralCode" name="referralCode" placeholder="Enter referral code" />
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading || !selectedRole}>
             {isLoading ? 'Creating account...' : 'Create account'}

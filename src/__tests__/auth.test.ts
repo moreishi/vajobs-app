@@ -158,9 +158,101 @@ describe('signUp', () => {
         email: 'test@example.com',
         role: 'client',
         password: expect.any(String),
+        referralCode: expect.any(String),
       }),
     })
 
+    expect(redirect).toHaveBeenCalledWith('/login?checkEmail=true')
+  })
+
+  it('returns error when referral code is invalid', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+
+    const formData = new FormData()
+    formData.set('email', 'test@example.com')
+    formData.set('password', 'password123')
+    formData.set('role', 'talent')
+    formData.set('referralCode', 'INVALID')
+
+    const result = await signUp(formData)
+    expect(result).toEqual({ error: 'Invalid referral code' })
+  })
+
+  it('creates user with valid referral code linking to referrer', async () => {
+    vi.mocked(prisma.user.findUnique)
+      .mockResolvedValueOnce(null) // email check
+      .mockResolvedValueOnce({ id: 'referrer-id' }) // referral code lookup
+    vi.mocked(prisma.user.create).mockResolvedValueOnce({
+      id: 'new-id',
+      email: 'referred@example.com',
+      password: 'hashed-password',
+      role: 'talent',
+      name: null,
+      emailVerified: null,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    vi.mocked(prisma.notificationPreference.createMany).mockResolvedValueOnce({ count: 22 })
+
+    const { redirect } = await import('next/navigation')
+
+    const formData = new FormData()
+    formData.set('email', 'referred@example.com')
+    formData.set('password', 'password123')
+    formData.set('role', 'talent')
+    formData.set('referralCode', 'ABC123')
+
+    await signUp(formData)
+
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { referralCode: 'ABC123' },
+      select: { id: true },
+    })
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        email: 'referred@example.com',
+        role: 'talent',
+        referredById: 'referrer-id',
+        referralCode: expect.any(String),
+      }),
+    })
+    expect(redirect).toHaveBeenCalledWith('/login?checkEmail=true')
+  })
+
+  it('creates user without referral code when none provided', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.user.create).mockResolvedValueOnce({
+      id: 'new-id',
+      email: 'test@example.com',
+      password: 'hashed-password',
+      role: 'talent',
+      name: null,
+      emailVerified: null,
+      image: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    vi.mocked(prisma.notificationPreference.createMany).mockResolvedValueOnce({ count: 22 })
+
+    const { redirect } = await import('next/navigation')
+
+    const formData = new FormData()
+    formData.set('email', 'test@example.com')
+    formData.set('password', 'password123')
+    formData.set('role', 'talent')
+
+    await signUp(formData)
+
+    expect(prisma.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        email: 'test@example.com',
+        role: 'talent',
+        referredById: null,
+        referralCode: expect.any(String),
+      }),
+    })
     expect(redirect).toHaveBeenCalledWith('/login?checkEmail=true')
   })
 

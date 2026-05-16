@@ -40,6 +40,12 @@ model User {
   vaSubscriptions     VaSubscription[]
   notificationPreferences NotificationPreference[]
   savedSearchAlerts       SavedSearchAlert[]
+  referralCode            String?             @unique
+  referredById            String?
+  referredBy              User?               @relation("Referral", fields: [referredById], references: [id])
+  referrals               User[]              @relation("Referral")
+  referralRewardsGiven    ReferralReward[]    @relation("RewardsGiven")
+  referralRewardsReceived ReferralReward[]    @relation("RewardsReceived")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
@@ -556,4 +562,19 @@ model VaSubscription {
 
   @@index([userId, status])
   @@index([planId])
+}
+
+model ReferralReward {
+  id         String   @id @default(cuid())
+  referrerId String
+  refereeId  String
+  amount     Int      @default(10)
+  createdAt  DateTime @default(now())
+
+  referrer   User     @relation("RewardsGiven", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee    User     @relation("RewardsReceived", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, refereeId])
+  @@index([referrerId])
+  @@index([refereeId])
 }
