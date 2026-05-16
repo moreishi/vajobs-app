@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isMembershipEnabled } from '@/lib/features'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 
@@ -10,6 +11,9 @@ export const dynamic = 'force-dynamic'
 export default async function VaSubscriptionPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+
+  const enabled = await isMembershipEnabled()
+  if (!enabled) redirect('/dashboard')
 
   const [plans, activeSub] = await Promise.all([
     prisma.vaSubscriptionPlan.findMany({

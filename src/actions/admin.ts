@@ -136,3 +136,31 @@ export async function processAllPending() {
 
   return { success: true, ...result }
 }
+
+export async function getMembershipEnabled() {
+  const session = await auth()
+  if (session?.user?.role !== 'admin') return null
+
+  const setting = await prisma.paymentSetting.findUnique({
+    where: { key: 'memberships_enabled' },
+  })
+  return setting?.value !== 'false'
+}
+
+export async function toggleMembershipAccess() {
+  const session = await auth()
+  if (session?.user?.role !== 'admin') return { error: 'Unauthorized' }
+
+  const current = await prisma.paymentSetting.findUnique({
+    where: { key: 'memberships_enabled' },
+  })
+  const nowEnabled = current?.value === 'false'
+
+  await prisma.paymentSetting.upsert({
+    where: { key: 'memberships_enabled' },
+    create: { key: 'memberships_enabled', value: 'true' },
+    update: { value: nowEnabled ? 'true' : 'false' },
+  })
+
+  return { success: true, enabled: nowEnabled }
+}

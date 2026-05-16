@@ -9,6 +9,8 @@ import { BarChart } from '@/components/ui/bar-chart'
 import { LineChart } from '@/components/ui/line-chart'
 import { PieChart } from '@/components/ui/pie-chart'
 import { AdminExportButtons } from './admin-export-buttons'
+import { MembershipToggle } from '@/components/admin/membership-toggle'
+import { getMembershipEnabled } from '@/actions/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -166,6 +168,8 @@ export default async function AdminDashboardPage() {
       select: { amount: true, dueDate: true },
     }),
   ])
+
+  const membershipEnabled = await getMembershipEnabled()
 
   const roleMap: Record<string, number> = {}
   for (const r of roleCounts) roleMap[r.role] = r._count
@@ -694,6 +698,13 @@ export default async function AdminDashboardPage() {
               <Link href="/setup" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Seed Data</Link>
             </CardContent>
           </Card>
+
+          {/* Membership Access Toggle */}
+          {membershipEnabled !== null && (
+            <div className="mt-4">
+              <MembershipToggle enabled={membershipEnabled} />
+            </div>
+          )}
         </div>
       </div>
 

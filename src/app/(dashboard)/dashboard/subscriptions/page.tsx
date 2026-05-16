@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isMembershipEnabled } from '@/lib/features'
 import { getActiveProvider } from '@/lib/payments/registry'
 import { PROVIDER_LABELS } from '@/lib/payments/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +15,9 @@ export const dynamic = 'force-dynamic'
 export default async function SubscriptionsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
+
+  const enabled = await isMembershipEnabled()
+  if (!enabled) redirect('/dashboard')
 
   const activeProvider = await getActiveProvider().catch(() => null)
   const providerLabel = activeProvider ? PROVIDER_LABELS[activeProvider.name] : null

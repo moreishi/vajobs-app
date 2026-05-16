@@ -9,6 +9,7 @@ import { JobStatusToggle } from '@/components/jobs/job-status-toggle'
 import { ReferralCard } from '@/components/dashboard/referral-card'
 import { ensureReferralCode } from '@/actions/referrals'
 import { getReferralConversionStats } from '@/lib/referrals'
+import { isMembershipEnabled } from '@/lib/features'
 import type { Role } from '@/types'
 
 const roleConfig: Record<Role, { label: string; className: string }> = {
@@ -47,6 +48,8 @@ export default async function DashboardPage() {
       redirect('/dashboard/onboarding')
     }
   }
+
+  const membershipEnabled = await isMembershipEnabled()
 
   if (role === 'talent') {
     const [u, pendingApps, interviews, acceptedApps, referralEarnings, referredUsers] = await Promise.all([
@@ -123,7 +126,9 @@ export default async function DashboardPage() {
             <Link href="/dashboard/referrals" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Referrals</Link>
             <Link href="/jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Browse Jobs</Link>
             <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
-            <Link href="/dashboard/va-subscription" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Membership</Link>
+            {membershipEnabled && (
+              <Link href="/dashboard/va-subscription" className={buttonVariants({ variant: 'outline', size: 'sm' })}>VA Membership</Link>
+            )}
           </CardContent>
         </Card>
 
@@ -262,7 +267,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Subscription status for clients */}
-      {role !== 'admin' && activeSubscription && (
+      {role !== 'admin' && activeSubscription && membershipEnabled && (
         <Card className="mb-8">
           <CardContent className="flex items-center justify-between p-4">
             <div>
@@ -292,7 +297,9 @@ export default async function DashboardPage() {
             <Link href="/dashboard/saved-jobs" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Jobs</Link>
             <Link href="/dashboard/settings" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Account Settings</Link>
             <Link href="/dashboard/referrals" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Referrals</Link>
-            <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Membership</Link>
+            {membershipEnabled && (
+              <Link href="/dashboard/subscriptions" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Membership</Link>
+            )}
             <Link href="/dashboard/saved-searches" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Saved Searches</Link>
             {role === 'admin' && (
               <Link href="/dashboard/admin" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Admin Dashboard</Link>
