@@ -16,6 +16,11 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
+// NEXT_REDIRECT is thrown by next/navigation redirect()
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(() => { throw new Error('NEXT_REDIRECT') }),
+}))
+
 const { prisma } = await import('@/lib/prisma')
 const { auth } = await import('@/lib/auth')
 let chooseRole: typeof import('@/actions/choose-role').chooseRole
@@ -54,39 +59,33 @@ describe('chooseRole', () => {
     expect(result).toEqual({ error: 'Please select a role' })
   })
 
-  it('updates role to talent and returns success', async () => {
+  it('updates role to talent and redirects', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'guest-id', role: 'guest' } } as any)
-    vi.mocked(prisma.user.update).mockResolvedValueOnce({
-      id: 'guest-id',
-      role: 'talent',
-    } as any)
+    vi.mocked(prisma.user.update).mockResolvedValueOnce({} as any)
 
     const formData = new FormData()
     formData.set('role', 'talent')
-    const result = await chooseRole(formData)
+
+    await expect(chooseRole(formData)).rejects.toThrow('NEXT_REDIRECT')
 
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 'guest-id' },
       data: { role: 'talent' },
     })
-    expect(result).toEqual({ success: true, role: 'talent' })
   })
 
-  it('updates role to client and returns success', async () => {
+  it('updates role to client and redirects', async () => {
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: 'guest-id', role: 'guest' } } as any)
-    vi.mocked(prisma.user.update).mockResolvedValueOnce({
-      id: 'guest-id',
-      role: 'client',
-    } as any)
+    vi.mocked(prisma.user.update).mockResolvedValueOnce({} as any)
 
     const formData = new FormData()
     formData.set('role', 'client')
-    const result = await chooseRole(formData)
+
+    await expect(chooseRole(formData)).rejects.toThrow('NEXT_REDIRECT')
 
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 'guest-id' },
       data: { role: 'client' },
     })
-    expect(result).toEqual({ success: true, role: 'client' })
   })
 })

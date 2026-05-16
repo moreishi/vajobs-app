@@ -9,7 +9,12 @@ export default async function OnboardingPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const role = session.user.role
+  // Fetch role from DB directly to handle stale JWT after role update
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  })
+  const role = user?.role
 
   // Only talent and client need onboarding
   if (role !== 'talent' && role !== 'client') redirect('/dashboard')

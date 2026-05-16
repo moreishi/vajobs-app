@@ -20,7 +20,7 @@ export default auth((req) => {
     }
 
     // Guests must pick a role before accessing the dashboard
-    if (role === 'guest' && nextUrl.pathname !== '/dashboard/choose-role') {
+    if (role === 'guest' && nextUrl.pathname !== '/dashboard/choose-role' && nextUrl.pathname !== '/dashboard/onboarding') {
       return NextResponse.redirect(new URL('/dashboard/choose-role', nextUrl))
     }
   }
