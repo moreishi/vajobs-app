@@ -15,6 +15,7 @@ export default async function SettingsPage() {
       name: true,
       email: true,
       image: true,
+      timezone: true,
       referralCode: true,
       referredBy: { select: { name: true, email: true } },
       referralRewardsGiven: { select: { amount: true } },
@@ -26,7 +27,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-8">
       <ProfilePhotoUpload currentImage={user?.image ?? null} userName={user?.name ?? null} />
-      <SettingsForm name={user?.name ?? null} email={user?.email ?? ''} />
+      <SettingsForm name={user?.name ?? null} email={user?.email ?? ''} timezone={user?.timezone ?? 'Asia/Manila'} />
 
       {user?.referralCode && (
         <Card>

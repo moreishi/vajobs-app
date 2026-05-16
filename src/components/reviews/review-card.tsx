@@ -1,4 +1,5 @@
 import { StarRating } from './star-rating'
+import { FormattedDate } from '@/components/ui/formatted-date'
 
 type ReviewCardProps = {
   review: {
@@ -34,7 +35,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
           </div>
         </div>
         <span className="shrink-0 text-xs text-muted-foreground">
-          {new Date(review.createdAt).toLocaleDateString()}
+          <FormattedDate date={review.createdAt} type="date" />
         </span>
       </div>
       {review.comment && (

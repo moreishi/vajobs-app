@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ApplicationStatusBadge } from '@/components/applications/application-status-badge'
+import { formatDateShort } from '@/lib/dates'
 import type { Application } from '@/types'
 
 export function ApplicationCard({ application }: { application: Application }) {
@@ -35,8 +36,8 @@ export function ApplicationCard({ application }: { application: Application }) {
         <CardContent>
           <p className="text-xs text-muted-foreground">
             {isTalentView
-              ? `Applied on ${new Date(application.createdAt).toLocaleDateString()}`
-              : `Applied by ${application.applicant!.name || application.applicant!.email} on ${new Date(application.createdAt).toLocaleDateString()}`
+              ? `Applied on ${formatDateShort(application.createdAt)}`
+              : `Applied by ${application.applicant!.name || application.applicant!.email} on ${formatDateShort(application.createdAt)}`
             }
           </p>
         </CardContent>

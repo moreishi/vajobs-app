@@ -155,6 +155,7 @@ export async function updateAccount(_prevState: { error?: string; success?: bool
   const emailInput = (formData.get('email') as string)?.trim()
   const currentPassword = formData.get('currentPassword') as string
   const newPassword = formData.get('newPassword') as string
+  const timezone = (formData.get('timezone') as string)?.trim() || undefined
 
   // Fall back to current email when field is disabled (not submitted)
   const user = await prisma.user.findUnique({ where: { id: session.user.id } })
@@ -178,12 +179,12 @@ export async function updateAccount(_prevState: { error?: string; success?: bool
     const hashed = await (await import('bcryptjs')).hash(newPassword, 12)
     await prisma.user.update({
       where: { id: user.id },
-      data: { name, email, password: hashed },
+      data: { name, email, password: hashed, timezone },
     })
   } else {
     await prisma.user.update({
       where: { id: user.id },
-      data: { name, email },
+      data: { name, email, timezone },
     })
   }
 

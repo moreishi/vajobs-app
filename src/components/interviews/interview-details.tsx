@@ -6,8 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 import type { Interview } from '@/types'
 
+function useTimezone(): string {
+  if (typeof document === 'undefined') return 'Asia/Manila'
+  return document.documentElement.dataset.timezone || 'Asia/Manila'
+}
+
 export function InterviewDetails({ interview, isClient }: { interview: Interview; isClient: boolean }) {
   const [error, setError] = useState<string | null>(null)
+  const tz = useTimezone()
 
   async function handleCancel(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -28,6 +34,7 @@ export function InterviewDetails({ interview, isClient }: { interview: Interview
             <span className="text-xs text-muted-foreground">Date</span>
             <p className="font-medium">
               {new Date(interview.scheduledAt).toLocaleDateString(undefined, {
+                timeZone: tz,
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -38,10 +45,14 @@ export function InterviewDetails({ interview, isClient }: { interview: Interview
           <div>
             <span className="text-xs text-muted-foreground">Time</span>
             <p className="font-medium">
-              {new Date(interview.scheduledAt).toLocaleTimeString([], {
+              {new Date(interview.scheduledAt).toLocaleTimeString(undefined, {
+                timeZone: tz,
                 hour: '2-digit',
                 minute: '2-digit',
               })}
+              <span className="ml-1 text-xs text-muted-foreground">
+                {new Intl.DateTimeFormat(undefined, { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date()).find(p => p.type === 'timeZoneName')?.value || tz.split('/').pop()}
+              </span>
             </p>
           </div>
           {interview.duration && (

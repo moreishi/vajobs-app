@@ -194,7 +194,9 @@ export function ChatMessages({
       )}
 
       <div className="flex items-center gap-2">
-        <MessageForm applicationId={applicationId} onMessageSent={handleMessageSent} />
+        <div className="flex-1">
+          <MessageForm applicationId={applicationId} onMessageSent={handleMessageSent} />
+        </div>
         <span
           className={`inline-block h-2 w-2 shrink-0 rounded-full ${
             connected ? 'bg-green-500' : 'bg-yellow-400'

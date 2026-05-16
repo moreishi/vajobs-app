@@ -1,4 +1,5 @@
 import type { Message } from '@/types'
+import { FormattedDate } from '@/components/ui/formatted-date'
 
 export function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean }) {
   return (
@@ -36,7 +37,7 @@ export function MessageBubble({ message, isOwn }: { message: Message; isOwn: boo
             isOwn ? 'text-primary-foreground/60' : 'text-muted-foreground'
           }`}
         >
-          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          <FormattedDate date={message.createdAt} type="datetime" />
         </p>
       </div>
     </div>

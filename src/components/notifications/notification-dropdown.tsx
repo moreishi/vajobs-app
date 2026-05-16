@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { getNotifications, markAsRead, markAllAsRead } from '@/actions/notifications'
 import { buttonVariants } from '@/components/ui/button'
+import { FormattedDate } from '@/components/ui/formatted-date'
 
 type Notification = {
   id: string
@@ -105,7 +106,7 @@ export function NotificationDropdown({ initialCount }: { initialCount: number })
                       </p>
                       {n.body && <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{n.body}</p>}
                       <p className="mt-0.5 text-[10px] text-muted-foreground">
-                        {new Date(n.createdAt).toLocaleDateString()} {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <FormattedDate date={n.createdAt} type="datetime" />
                       </p>
                     </div>
                     {!n.read && (

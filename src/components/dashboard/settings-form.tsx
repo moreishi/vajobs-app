@@ -1,18 +1,55 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { updateAccount } from '@/actions/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button'
 
+const TIMEZONES = [
+  'Asia/Manila',
+  'Asia/Tokyo',
+  'Asia/Singapore',
+  'Asia/Hong_Kong',
+  'Asia/Seoul',
+  'Asia/Shanghai',
+  'Asia/Dubai',
+  'Asia/Kolkata',
+  'Asia/Bangkok',
+  'Asia/Taipei',
+  'Pacific/Auckland',
+  'Australia/Sydney',
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'America/Sao_Paulo',
+  'Europe/London',
+  'Europe/Paris',
+  'Europe/Berlin',
+  'Europe/Moscow',
+  'Africa/Cairo',
+  'Africa/Lagos',
+  'UTC',
+]
+
 interface SettingsFormProps {
   name: string | null
   email: string
+  timezone: string
 }
 
-export function SettingsForm({ name, email }: SettingsFormProps) {
+export function SettingsForm({ name, email, timezone }: SettingsFormProps) {
+  const { update } = useSession()
   const [state, action, pending] = useActionState(updateAccount, { error: '' })
+  const [selectedTz, setSelectedTz] = useState(timezone)
+
+  useEffect(() => {
+    if (state.success) {
+      update({ timezone: selectedTz })
+    }
+  }, [state.success, selectedTz, update])
 
   if (state.success) {
     return (
@@ -64,6 +101,22 @@ export function SettingsForm({ name, email }: SettingsFormProps) {
               className="flex h-9 w-full cursor-not-allowed rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground shadow-sm"
             />
             <p className="mt-1 text-xs text-muted-foreground">Email cannot be changed.</p>
+          </div>
+
+          <div>
+            <label htmlFor="timezone" className="block text-sm font-medium mb-1">Timezone</label>
+            <select
+              id="timezone"
+              name="timezone"
+              defaultValue={timezone}
+              onChange={(e) => setSelectedTz(e.target.value)}
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">All dates will be displayed in this timezone. Default: Asia/Manila (GMT+8).</p>
           </div>
 
           <hr className="my-2" />

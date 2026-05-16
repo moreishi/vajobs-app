@@ -30,14 +30,22 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  let timezone = 'Asia/Manila'
+  try {
+    const { auth } = await import('@/lib/auth')
+    const session = await auth()
+    if (session?.user?.timezone) timezone = session.user.timezone
+  } catch {}
+
   return (
     <html
       lang="en"
+      data-timezone={timezone}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">

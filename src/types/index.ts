@@ -184,11 +184,13 @@ export type ClientProfile = {
 declare module 'next-auth' {
   interface User {
     role?: string
+    timezone?: string
   }
   interface Session {
     user: {
       id?: string
       role?: string
+      timezone?: string
     } & import('next-auth').DefaultSession['user']
   }
 }
@@ -197,5 +199,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string
     role?: string
+    timezone?: string
   }
 }
