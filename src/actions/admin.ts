@@ -147,6 +147,32 @@ export async function getMembershipEnabled() {
   return setting?.value !== 'false'
 }
 
+export async function getGaScript() {
+  const session = await auth()
+  if (session?.user?.role !== 'admin') return null
+
+  const setting = await prisma.paymentSetting.findUnique({
+    where: { key: 'google_analytics_script' },
+  })
+  return setting?.value || ''
+}
+
+export async function updateGaScript(formData: FormData) {
+  const session = await auth()
+  if (session?.user?.role !== 'admin') return { error: 'Unauthorized' }
+
+  const script = formData.get('script') as string
+
+  await prisma.paymentSetting.upsert({
+    where: { key: 'google_analytics_script' },
+    create: { key: 'google_analytics_script', value: script },
+    update: { value: script },
+  })
+
+  revalidatePath('/dashboard/admin/settings')
+  return { success: true }
+}
+
 export async function toggleMembershipAccess() {
   const session = await auth()
   if (session?.user?.role !== 'admin') return { error: 'Unauthorized' }
