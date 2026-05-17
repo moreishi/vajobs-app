@@ -38,9 +38,10 @@ interface SettingsFormProps {
   name: string | null
   email: string
   timezone: string
+  hasPassword: boolean
 }
 
-export function SettingsForm({ name, email, timezone }: SettingsFormProps) {
+export function SettingsForm({ name, email, timezone, hasPassword }: SettingsFormProps) {
   const { update } = useSession()
   const [state, action, pending] = useActionState(updateAccount, { error: '' })
   const [selectedTz, setSelectedTz] = useState(timezone)
@@ -121,30 +122,34 @@ export function SettingsForm({ name, email, timezone }: SettingsFormProps) {
             <p className="mt-1 text-xs text-muted-foreground">All dates will be displayed in this timezone. Default: Asia/Manila (GMT+8).</p>
           </div>
 
-          <hr className="my-2" />
+          {hasPassword && (
+            <>
+              <hr className="my-2" />
 
-          <div>
-            <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">Current Password</label>
-            <input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Required to change password"
-            />
-          </div>
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">Current Password</label>
+                <input
+                  id="currentPassword"
+                  name="currentPassword"
+                  type="password"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Required to change password"
+                />
+              </div>
 
-          <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium mb-1">New Password</label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Leave blank to keep current"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">Min 6 characters. Leave blank to keep current password.</p>
-          </div>
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium mb-1">New Password</label>
+                <input
+                  id="newPassword"
+                  name="newPassword"
+                  type="password"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Leave blank to keep current"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Min 6 characters. Leave blank to keep current password.</p>
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-2 pt-2">
             <button

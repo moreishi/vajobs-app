@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SettingsForm } from '@/components/dashboard/settings-form'
+import { SetPasswordForm } from '@/components/dashboard/set-password-form'
 import { ProfilePhotoUpload } from '@/components/dashboard/profile-photo-upload'
 
 export default async function SettingsPage() {
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
       name: true,
       email: true,
       image: true,
+      password: true,
       timezone: true,
       referralCode: true,
       referredBy: { select: { name: true, email: true } },
@@ -23,11 +25,14 @@ export default async function SettingsPage() {
   })
 
   const totalEarned = user?.referralRewardsGiven.reduce((sum, r) => sum + r.amount, 0) ?? 0
+  const hasPassword = !!user?.password
 
   return (
     <div className="space-y-8">
       <ProfilePhotoUpload currentImage={user?.image ?? null} userName={user?.name ?? null} />
-      <SettingsForm name={user?.name ?? null} email={user?.email ?? ''} timezone={user?.timezone ?? 'Asia/Manila'} />
+      <SettingsForm name={user?.name ?? null} email={user?.email ?? ''} timezone={user?.timezone ?? 'Asia/Manila'} hasPassword={hasPassword} />
+
+      {!hasPassword && <SetPasswordForm />}
 
       {user?.referralCode && (
         <Card>

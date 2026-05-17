@@ -228,6 +228,30 @@ export async function seedAdmin(): Promise<{ success?: boolean; message?: string
   }
 }
 
+export async function setPassword(_prevState: { error?: string; success?: boolean } | undefined, formData: FormData): Promise<{ error?: string; success?: boolean }> {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Not authenticated' }
+
+  const password = formData.get('password') as string
+  const confirmPassword = formData.get('confirmPassword') as string
+
+  if (!password || password.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (password !== confirmPassword) return { error: 'Passwords do not match' }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+  if (!user) return { error: 'User not found' }
+  if (user.password) return { error: 'You already have a password. Use the settings form to change it.' }
+
+  const hashed = await hash(password, 12)
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { password: hashed },
+  })
+
+  revalidatePath(ROUTES.SETTINGS)
+  return { success: true }
+}
+
 export async function updateProfileImage(imageUrl: string) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Not authenticated' }
