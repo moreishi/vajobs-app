@@ -11,33 +11,42 @@ const staticPages = [
   { path: '/hello-va', priority: 0.6, changeFrequency: 'monthly' as const },
 ]
 
+export const dynamic = 'force-dynamic'
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [openJobs, publicTalents] = await Promise.all([
-    prisma.jobPost.findMany({
-      where: { status: 'open' },
-      select: { id: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    }),
-    prisma.profile.findMany({
-      where: { isPublic: true },
-      select: { userId: true, updatedAt: true },
-      orderBy: { updatedAt: 'desc' },
-    }),
-  ])
+  let jobUrls: MetadataRoute.Sitemap = []
+  let talentUrls: MetadataRoute.Sitemap = []
 
-  const jobUrls = openJobs.map((job) => ({
-    url: `${BASE_URL}/jobs/${job.id}`,
-    lastModified: job.updatedAt,
-    changeFrequency: 'daily' as const,
-    priority: 0.7,
-  }))
+  try {
+    const [openJobs, publicTalents] = await Promise.all([
+      prisma.jobPost.findMany({
+        where: { status: 'open' },
+        select: { id: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      prisma.profile.findMany({
+        where: { isPublic: true },
+        select: { userId: true, updatedAt: true },
+        orderBy: { updatedAt: 'desc' },
+      }),
+    ])
 
-  const talentUrls = publicTalents.map((profile) => ({
-    url: `${BASE_URL}/talents/${profile.userId}`,
-    lastModified: profile.updatedAt,
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }))
+    jobUrls = openJobs.map((job) => ({
+      url: `${BASE_URL}/jobs/${job.id}`,
+      lastModified: job.updatedAt,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    }))
+
+    talentUrls = publicTalents.map((profile) => ({
+      url: `${BASE_URL}/talents/${profile.userId}`,
+      lastModified: profile.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }))
+  } catch {
+    // DB not available — return static pages only
+  }
 
   return [
     ...staticPages.map((page) => ({
