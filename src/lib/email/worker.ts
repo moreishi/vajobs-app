@@ -26,6 +26,36 @@ export async function enqueueEmail(job: EmailJob) {
   })
 }
 
+export async function enqueueTransactionalEmail({
+  userId,
+  email,
+  type,
+  subject,
+  data,
+}: {
+  userId: string
+  email: string
+  type: string
+  subject: string
+  data: string
+}) {
+  if (!process.env.RESEND_API_KEY) {
+    logger.warn('Email Worker', `RESEND_API_KEY not set — ${type} not queued`)
+    return
+  }
+
+  await prisma.emailLog.create({
+    data: {
+      userId,
+      email,
+      type,
+      subject,
+      status: 'pending',
+      error: data,
+    },
+  })
+}
+
 export async function processPendingEmails(limit = 20) {
   if (!process.env.RESEND_API_KEY) return { processed: 0, failed: 0 }
 
@@ -51,7 +81,18 @@ export async function processPendingEmails(limit = 20) {
   return { processed, failed }
 }
 
-async function processLogEntry(log: { id: string; userId: string | null; type: string; subject: string }) {
+async function processLogEntry(log: { id: string; userId: string | null; email: string; type: string; subject: string; error: string | null }) {
+  // Handle transactional emails (password reset, email verification)
+  if (log.type === 'password_reset') {
+    await sendTransactionalEmail(log, 'password_reset')
+    return
+  }
+
+  if (log.type === 'email_verification') {
+    await sendTransactionalEmail(log, 'email_verification')
+    return
+  }
+
   if (!log.userId) {
     await prisma.emailLog.update({
       where: { id: log.id },
@@ -122,6 +163,67 @@ async function processLogEntry(log: { id: string; userId: string | null; type: s
         email: user.email,
         error: errorMsg,
       },
+    })
+  }
+}
+
+async function sendTransactionalEmail(
+  log: { id: string; userId: string | null; email: string; subject: string; error: string | null },
+  type: 'password_reset' | 'email_verification',
+) {
+  const baseUrl = process.env.AUTH_URL || 'http://localhost:3000'
+  const token = log.error
+
+  if (!token) {
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'failed', error: 'Missing token' },
+    })
+    return
+  }
+
+  // Look up user for personalization
+  let name = 'there'
+  if (log.userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: log.userId },
+      select: { name: true },
+    })
+    if (user?.name) name = user.name
+  }
+
+  let subject: string
+  let html: string
+
+  if (type === 'password_reset') {
+    const resetUrl = `${baseUrl}/reset-password?token=${token}`
+    subject = '[VA Jobs Online] Reset your password'
+    html = buildEmailHtml(
+      `Hi ${name},<br><br>We received a request to reset your password. Click the button below to set a new one. This link expires in 1 hour.<br><br>If you did not request this, you can safely ignore this email.`,
+      { text: 'Reset Password', url: resetUrl },
+    )
+  } else {
+    const verifyUrl = `${baseUrl}/verify-email?token=${token}`
+    subject = 'Verify your email - VA Jobs Online'
+    html = buildEmailHtml(
+      `Hi ${name},<br><br>Thanks for signing up! Click the button below to verify your email address and activate your account.`,
+      { text: 'Verify Email', url: verifyUrl },
+    )
+  }
+
+  try {
+    await sendEmail({ to: log.email, subject, html })
+
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'sent' },
+    })
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : 'Unknown error'
+
+    await prisma.emailLog.update({
+      where: { id: log.id },
+      data: { status: 'failed', error: errorMsg },
     })
   }
 }

@@ -2,7 +2,7 @@
 
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { enqueueTransactionalEmail } from '@/lib/email/worker'
 
 export async function forgotPassword(formData: FormData) {
   const email = formData.get('email') as string
@@ -24,15 +24,13 @@ export async function forgotPassword(formData: FormData) {
     data: { identifier: email, token, expires },
   })
 
-  const name = user.name || 'there'
-  const resetUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`
-  await sendEmail({
-    to: email,
-    subject: '[VA Jobs Online] Reset your password',
-    html: buildEmailHtml(
-      `Hi ${name},<br><br>We received a request to reset your password. Click the button below to set a new one. This link expires in 1 hour.<br><br>If you did not request this, you can safely ignore this email.`,
-      { text: 'Reset Password', url: resetUrl }
-    ),
+  // Queue email for background worker — returns immediately
+  await enqueueTransactionalEmail({
+    userId: user.id,
+    email,
+    type: 'password_reset',
+    subject: 'Reset your password',
+    data: token,
   })
 
   return { success: true }

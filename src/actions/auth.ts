@@ -7,7 +7,7 @@ import { hash } from 'bcryptjs'
 import { auth, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ROUTES } from '@/lib/constants'
-import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { enqueueTransactionalEmail } from '@/lib/email/worker'
 import { DEFAULT_EMAIL_PREFERENCES } from '@/lib/notification-defaults'
 import { awardXp } from '@/actions/reputation'
 import type { Role } from '@/types'
@@ -108,14 +108,13 @@ export async function signUp(formData: FormData) {
       data: { identifier: email, token, expires },
     })
 
-    const verifyUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/verify-email?token=${token}`
-    await sendEmail({
-      to: email,
-      subject: 'Verify your email - VA Jobs Online',
-      html: buildEmailHtml(
-        'Thanks for signing up! Click the button below to verify your email address and activate your account.',
-        { text: 'Verify Email', url: verifyUrl }
-      ),
+    // Queue email for background worker — returns immediately
+    await enqueueTransactionalEmail({
+      userId: user.id,
+      email,
+      type: 'email_verification',
+      subject: 'Verify your email',
+      data: token,
     })
   }
 
