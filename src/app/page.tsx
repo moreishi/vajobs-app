@@ -9,13 +9,13 @@ import { PricingSection } from '@/components/subscriptions/pricing-section'
 import { JsonLd } from '@/components/seo/json-ld'
 
 export const metadata: Metadata = {
-  title: 'Hire Top Filipino Virtual Assistants',
+  title: 'Homepage — VA Jobs Online',
   description:
-    'Find and hire skilled Filipino virtual assistants. Browse top talent, post jobs, and build your remote team with hand-picked VAs from the Philippines.',
+    'Hire elite Filipino virtual assistants for startups, agencies, and growing businesses. VAJobs connects top-tier remote talent with high-paying online opportunities worldwide.',
   openGraph: {
-    title: 'VA Jobs Online — Hire Top Filipino Virtual Assistants',
+    title: 'Homepage — VA Jobs Online',
     description:
-      'Find and hire skilled Filipino virtual assistants. Browse top talent, post jobs, and build your remote team.',
+      'Hire elite Filipino virtual assistants for startups, agencies, and growing businesses. VAJobs connects top-tier remote talent with high-paying online opportunities worldwide.',
   },
 }
 

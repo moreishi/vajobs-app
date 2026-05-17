@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Find VA Jobs | VA Jobs Online',
-  description: 'Premium remote jobs for Filipino Virtual Assistants. Work with international clients, earn in USD, and build a career from home.',
+  description:
+    'Join VAJobs and discover premium virtual assistant jobs for skilled Filipino professionals. Work remotely with international startups, agencies, and high-paying clients.',
 }
 
 const CATEGORIES = [

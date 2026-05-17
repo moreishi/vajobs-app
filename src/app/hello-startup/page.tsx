@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'Hire Filipino VAs | VA Jobs Online',
-  description: 'Build your team with skilled Filipino Virtual Assistants. Access top talent in 15+ categories at half the cost of local hiring.',
+  description:
+    'Find trusted Filipino virtual assistants ready to support your startup growth. VAJobs helps founders hire vetted remote talent for operations, marketing, admin, and more.',
 }
 
 const ROLES = [
