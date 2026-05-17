@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -7,9 +8,37 @@ import { ApplyForm } from '@/components/jobs/apply-form'
 import { SaveButton } from '@/components/jobs/save-button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PublicHeader } from '@/components/layout/public-header'
+import { JsonLd } from '@/components/seo/json-ld'
 import type { JobPost, JobType, JobStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  const job = await prisma.jobPost.findUnique({
+    where: { id },
+    select: { title: true, shortDescription: true, description: true, skills: true, location: true, salaryRange: true },
+  })
+
+  if (!job) return {}
+
+  const skills = JSON.parse(job.skills) as string[]
+  const description = job.shortDescription || job.description.slice(0, 160)
+  const siteUrl = process.env.NEXT_PUBLIC_URL || 'https://vajobs.online'
+
+  return {
+    title: job.title,
+    description,
+    alternates: { canonical: `${siteUrl}/jobs/${id}` },
+    openGraph: {
+      title: `${job.title} | VA Jobs Online`,
+      description,
+      type: 'article',
+      url: `${siteUrl}/jobs/${id}`,
+    },
+  }
+}
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -71,6 +100,34 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       <PublicHeader isLoggedIn={isLoggedIn} />
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8">
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'JobPosting',
+            title: typed.title,
+            description: typed.short_description || typed.description,
+            datePosted: typed.created_at,
+            validThrough: typed.expires_at || undefined,
+            employmentType: typed.type === 'full-time' ? 'FULL_TIME' : typed.type === 'part-time' ? 'PART_TIME' : 'CONTRACTOR',
+            hiringOrganization: {
+              '@type': 'Organization',
+              name: typed.poster_name || 'VA Jobs Online',
+            },
+            jobLocation: typed.location
+              ? {
+                  '@type': 'Place',
+                  address: { '@type': 'PostalAddress', addressLocality: typed.location },
+                }
+              : undefined,
+            estimatedSalary: typed.salary_range
+              ? {
+                  '@type': 'MonetaryAmount',
+                  description: typed.salary_range,
+                }
+              : undefined,
+            skills: typed.skills?.join(', '),
+          }}
+        />
         <Link
           href="/jobs"
           className={buttonVariants({ variant: 'ghost', size: 'sm' })}

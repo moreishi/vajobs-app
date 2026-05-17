@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { DashboardHeader } from '@/components/layout/dashboard-header'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { TimezoneSetter } from '@/components/ui/timezone-setter'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()

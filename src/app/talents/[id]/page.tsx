@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -12,11 +13,39 @@ import { computeBadges, type BadgeOptions } from '@/lib/badges'
 import { ReputationBadge, ReputationProgress } from '@/components/reputation'
 import { getReputation } from '@/actions/reputation'
 
-export const metadata = {
-  title: 'Talent Profile - VA Jobs Online',
-}
-
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+
+  const profile = await prisma.profile.findUnique({
+    where: { userId: id },
+    select: {
+      headline: true,
+      skills: true,
+      user: { select: { name: true, email: true } },
+    },
+  })
+
+  if (!profile) return {}
+
+  const name = profile.user.name || profile.user.email
+  const skills = profile.skills ? (JSON.parse(profile.skills) as string[]).slice(0, 5).join(', ') : ''
+  const siteUrl = process.env.NEXT_PUBLIC_URL || 'https://vajobs.online'
+
+  return {
+    title: `${name} — Virtual Assistant Profile`,
+    description: profile.headline
+      ? `${name} — ${profile.headline}${skills ? `. Skills: ${skills}` : ''}`
+      : `View ${name}'s profile on VA Jobs Online.${skills ? ` Skills: ${skills}` : ''}`,
+    alternates: { canonical: `${siteUrl}/talents/${id}` },
+    openGraph: {
+      title: `${name} — Virtual Assistant Profile | VA Jobs Online`,
+      description: profile.headline || `View ${name}'s virtual assistant profile.`,
+      url: `${siteUrl}/talents/${id}`,
+    },
+  }
+}
 
 export default async function TalentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

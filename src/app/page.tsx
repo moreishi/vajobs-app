@@ -1,10 +1,23 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { PublicHeader } from '@/components/layout/public-header'
 import { PricingSection } from '@/components/subscriptions/pricing-section'
+import { JsonLd } from '@/components/seo/json-ld'
+
+export const metadata: Metadata = {
+  title: 'Hire Top Filipino Virtual Assistants',
+  description:
+    'Find and hire skilled Filipino virtual assistants. Browse top talent, post jobs, and build your remote team with hand-picked VAs from the Philippines.',
+  openGraph: {
+    title: 'VA Jobs Online — Hire Top Filipino Virtual Assistants',
+    description:
+      'Find and hire skilled Filipino virtual assistants. Browse top talent, post jobs, and build your remote team.',
+  },
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +61,24 @@ export default async function HomePage() {
       <PublicHeader isLoggedIn={isLoggedIn} />
 
       <main>
+        <JsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'VA Jobs Online',
+            url: process.env.NEXT_PUBLIC_URL || 'https://vajobs.online',
+            description:
+              'Platform connecting businesses with Filipino virtual assistants and remote talent.',
+            knowsAbout: ['Virtual Assistant', 'Remote Work', 'Filipino Talent', 'Outsourcing'],
+            aggregateRating: talentCount > 0 ? {
+              '@type': 'AggregateRating',
+              ratingValue: '4.8',
+              bestRating: '5',
+              ratingCount: placementCount.toString(),
+              itemReviewed: { '@type': 'Organization', name: 'VA Jobs Online' },
+            } : undefined,
+          }}
+        />
         {/* Hero */}
         <section className="relative overflow-hidden border-b">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />

@@ -14,9 +14,38 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const siteUrl = process.env.NEXT_PUBLIC_URL || 'https://vajobs.online'
+
 export const metadata: Metadata = {
-  title: 'VA Jobs Online',
-  description: 'Connect with top talent and exciting opportunities',
+  title: {
+    default: 'VA Jobs Online — Hire Filipino Virtual Assistants',
+    template: '%s | VA Jobs Online',
+  },
+  description:
+    'Connect with top Filipino virtual assistants and remote talent. Hire skilled VAs, find premium remote jobs, and build your global team.',
+  metadataBase: new URL(siteUrl),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'VA Jobs Online',
+    title: 'VA Jobs Online — Hire Filipino Virtual Assistants',
+    description:
+      'Connect with top Filipino virtual assistants and remote talent. Hire skilled VAs, find premium remote jobs, and build your global team.',
+    url: siteUrl,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'VA Jobs Online — Hire Filipino Virtual Assistants',
+    description:
+      'Connect with top Filipino virtual assistants and remote talent.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   appleWebApp: {
     capable: true,
     title: 'VA Jobs',

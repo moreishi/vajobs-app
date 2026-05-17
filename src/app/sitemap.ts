@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next'
+import { prisma } from '@/lib/prisma'
 
 const BASE_URL = process.env.NEXT_PUBLIC_URL || 'https://vajobs.online'
 
@@ -10,11 +11,42 @@ const staticPages = [
   { path: '/hello-va', priority: 0.6, changeFrequency: 'monthly' as const },
 ]
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return staticPages.map((page) => ({
-    url: `${BASE_URL}${page.path}`,
-    lastModified: new Date(),
-    changeFrequency: page.changeFrequency,
-    priority: page.priority,
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [openJobs, publicTalents] = await Promise.all([
+    prisma.jobPost.findMany({
+      where: { status: 'open' },
+      select: { id: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    prisma.profile.findMany({
+      where: { isPublic: true },
+      select: { userId: true, updatedAt: true },
+      orderBy: { updatedAt: 'desc' },
+    }),
+  ])
+
+  const jobUrls = openJobs.map((job) => ({
+    url: `${BASE_URL}/jobs/${job.id}`,
+    lastModified: job.updatedAt,
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
   }))
+
+  const talentUrls = publicTalents.map((profile) => ({
+    url: `${BASE_URL}/talents/${profile.userId}`,
+    lastModified: profile.updatedAt,
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }))
+
+  return [
+    ...staticPages.map((page) => ({
+      url: `${BASE_URL}${page.path}`,
+      lastModified: new Date(),
+      changeFrequency: page.changeFrequency,
+      priority: page.priority,
+    })),
+    ...jobUrls,
+    ...talentUrls,
+  ]
 }
