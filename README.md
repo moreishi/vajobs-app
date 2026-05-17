@@ -74,7 +74,7 @@ A full-featured virtual assistant job marketplace built with Next.js. Talents ca
 | **Payment Providers** | Stripe, PayPal, Wise, HitPay, Xendit, Maya — strategy pattern, auto-detection |
 | **Connects Economy** | Purchase packs of 10/25/50/100 connects, earn via subscriptions, spend on applications |
 | **Subscriptions** | Tiered plans (Starter $49/Growth $149/Scale $349) with connects per period, auto-renewal |
-| **Email** | Background worker queue via Resend for all notification types |
+| **Email** | Background worker queue via Resend — queued emails processed by cron every minute |
 | **Real-time** | Server-Sent Events for live chat with automatic polling fallback and reconnection |
 | **Testing** | 327+ Vitest tests covering actions, auth guards, and business logic |
 | **Migrations** | Custom runner (`prisma/sync.cjs`) applies SQL at startup with `_schema_migrations` tracking table |
@@ -132,16 +132,40 @@ npm run dev
 | Growth  | $149/mo | 100 | Most Popular |
 | Scale   | $349/mo | 350 | — |
 
-### Optional: Email (Resend)
+## Email Worker
 
-Get a free API key at [resend.com](https://resend.com) and add to `.env.local`:
+Transactional emails (password reset, email verification) and notification emails are sent through a **background worker queue** instead of being sent synchronously in server actions.
 
+### How it works
+
+1. Server action creates an `EmailLog` record with status `pending`
+2. Action returns immediately — no wait for the email API
+3. Worker picks up pending records, generates HTML, sends via Resend
+
+### Triggering the worker
+
+A cron job on the host hits the internal endpoint every minute:
+
+```bash
+* * * * * curl -s -X POST https://your-domain.com/api/email/process \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
-RESEND_API_KEY=re_...
-EMAIL_FROM=onboarding@resend.dev
-```
 
-Email sending runs through a background worker queue — the response returns immediately and the worker processes the email asynchronously.
+The endpoint is authenticated via `CRON_SECRET` env var. Without this cron, queued emails will not be sent until an admin manually triggers processing via the dashboard.
+
+### Email types
+
+| Type | Purpose | Queued by |
+|------|---------|-----------|
+| `password_reset` | Reset link with 1hr expiry | Forgot password action |
+| `email_verification` | Verify new account | Registration action |
+| Notifications | In-app event notifications | Notification system |
+
+### Monitoring
+
+- All sent/failed emails are logged in the `EmailLog` table
+- Admins can view email logs in the dashboard
+- Worker processes up to 20 pending emails per run
 
 ### Optional: Payment Providers
 
@@ -176,16 +200,26 @@ MAYA_PUBLIC_KEY=pk-...
 
 The app auto-detects the first configured provider and uses it for checkout flows.
 
-### Optional: Subscription Auto-Renewal
+### Cron Jobs
 
-For scheduled subscription renewal, a cron job hits:
+The following cron jobs are required in production (configured on host, not inside container):
+
+| Endpoint | Frequency | Purpose |
+|----------|-----------|---------|
+| `POST /api/email/process` | Every minute | Process queued emails |
+| `POST /api/subscriptions/renew` | Daily (3 AM) | Trigger subscription renewals |
+
+Both endpoints use `Bearer` auth with `$CRON_SECRET`:
 
 ```bash
-curl -X POST https://your-domain.com/api/subscriptions/renew \
+* * * * * curl -s -X POST https://your-domain.com/api/email/process \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+0 3 * * * curl -s -X POST https://your-domain.com/api/subscriptions/renew \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-Add `CRON_SECRET` to `.env.local` for local testing.
+Set `CRON_SECRET` in the environment — it must match between `.env` and the crontab.
 
 ## Database: Dev vs Production
 
@@ -310,7 +344,7 @@ Put behind a reverse proxy (nginx, Caddy) with a process manager (PM2, systemd).
 | `AUTH_URL` | No | `http://localhost:3000` | App URL for email links and callbacks |
 | `NEXT_PUBLIC_URL` | No | `https://vajobs.online` | Base URL for sitemap generation |
 | `FORCE_SEED` | No | — | Set to `true` to run seed in production (generates secure admin password, emails it if RESEND_API_KEY + EMAIL_FROM set, skips test data) |
-| `CRON_SECRET` | No | — | Secret for subscription renewal cron endpoint |
+| `CRON_SECRET` | No | — | Secret for cron endpoints (email processing + subscription renewals) |
 | `AUTH_GOOGLE_ID` | No | — | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | No | — | Google OAuth client secret |
 | `RESEND_API_KEY` | No | — | Resend API key (email) |

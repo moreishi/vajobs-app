@@ -10,3 +10,5 @@
 - **Docker**: `npm run build` handles `prisma generate` — no separate step needed.
 - **Tests**: Vitest (`npm test`) + Playwright (`npm run test:e2e`). Write tests first (TDD).
 - **Sitemap**: `src/app/sitemap.ts` — public pages only. Base URL from `NEXT_PUBLIC_URL`.
+- **Email worker**: transactional + notification emails queue via `EmailLog` table (status `pending`). Cron on host (`* * * * *`) hits `POST /api/email/process` with `CRON_SECRET` bearer token to process queue.
+- **Cron jobs**: host crontab triggers email processing (every min) and subscription renewals (daily 3 AM) via `CRON_SECRET`-authenticated endpoints.
