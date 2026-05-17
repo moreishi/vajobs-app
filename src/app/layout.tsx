@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { SessionProvider } from '@/components/auth/session-provider'
 import { Toaster } from '@/components/ui/sonner'
+import { GoogleAnalytics } from '@/components/seo/google-analytics'
 import './globals.css'
 
 const geistSans = Geist({
@@ -74,6 +75,7 @@ export default function RootLayout({
         <SessionProvider>
           {children}
           <Toaster />
+          <GoogleAnalytics />
         </SessionProvider>
       </body>
     </html>
