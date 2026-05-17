@@ -109,7 +109,7 @@ export async function signUp(formData: FormData) {
     })
 
     const verifyUrl = `${process.env.AUTH_URL || 'http://localhost:3000'}/verify-email?token=${token}`
-    sendEmail({
+    await sendEmail({
       to: email,
       subject: 'Verify your email - VA Jobs Online',
       html: buildEmailHtml(

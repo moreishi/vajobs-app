@@ -9,7 +9,10 @@ type EmailPayload = {
 export async function sendEmail({ to, subject, html }: EmailPayload) {
   const apiKey = process.env.RESEND_API_KEY
   const fromEmail = process.env.EMAIL_FROM || 'noreply@vajobs.online'
-  if (!apiKey) return
+  if (!apiKey) {
+    logger.warn('Email', 'RESEND_API_KEY not set — email not sent')
+    return
+  }
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
